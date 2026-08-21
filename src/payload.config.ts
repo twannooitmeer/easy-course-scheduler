@@ -16,6 +16,7 @@ import { Programs } from './collections/Programs'
 import { Schools } from './collections/Schools'
 import { Teachers } from './collections/Teachers'
 import { Users } from './collections/Users'
+import { migrations } from './migrations'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -58,15 +59,12 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },
-    // Payload disables schema auto-push under NODE_ENV=production by
-    // design (real migrations should own schema changes once there's real
-    // data to protect) — but no migrations exist yet, so a fresh production
-    // deploy would otherwise start against a database with no tables at
-    // all ("relation \"users\" does not exist"), exactly what happened on
-    // the first real deploy. ALLOW_SCHEMA_PUSH opts a specific environment
-    // back into auto-push explicitly; leave it unset once real migrations
-    // (`payload migrate:create`) exist and this deployment holds real data.
-    push: process.env.NODE_ENV !== 'production' || process.env.ALLOW_SCHEMA_PUSH === 'true',
+    // Payload disables filesystem migration-directory scanning under
+    // NODE_ENV=production (a bundled/standalone build can't reliably read
+    // a migrations folder at runtime) — prodMigrations statically imports
+    // them instead. Regenerate src/migrations/index.ts's import whenever
+    // `payload migrate:create` adds a new migration file.
+    prodMigrations: migrations,
   }),
   sharp,
   plugins: [],

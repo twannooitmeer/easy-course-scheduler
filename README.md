@@ -73,28 +73,37 @@ failing safely instead of throwing. Runs against the same dev database, so
 
 ## Deployment
 
+On a **fresh database** (first deploy, or after a new migration was added),
+run the migrator before starting the app — Payload disables schema
+auto-push under `NODE_ENV=production` by design, so an unmigrated database
+has no tables at all:
+
 ```bash
+docker compose --env-file .env.prod -f docker-compose.yml \
+  -f docker-compose.prod.yml run --rm migrator
+
 docker compose --env-file .env.prod \
   -f docker-compose.yml -f docker-compose.prod.yml \
   up -d --build
 ```
 
+The migrator builds from the same Dockerfile's `builder` stage (full
+toolchain), not the trace-pruned `runner` image the app itself runs from —
+the standalone build doesn't include the `payload` CLI at all.
+
 See the comments in `docker-compose.prod.yml` for the network/proxy
 assumptions (an external `edge` network your reverse proxy is already on).
 
-**No real migrations exist yet** — set `ALLOW_SCHEMA_PUSH=true` in
-`.env.prod` for now so Payload pushes the schema on boot (otherwise a
-fresh production database has no tables at all: `relation "users" does
-not exist`). Generate and commit real migrations with `payload
-migrate:create` before this holds any real data you can't afford to lose
-to an auto-push, then stop setting `ALLOW_SCHEMA_PUSH`.
+**Adding a migration**: after changing a collection, run
+`pnpm payload migrate:create` locally, commit the generated file under
+`src/migrations/`, then run the migrator again on deploy.
 
 ## Roadmap
 
 - [x] Scaffold: Payload collections for the full data model
 - [x] Booking → lesson generation hook, with tests
 - [x] Bilingual (EN/NL) admin UI and field labels
-- [ ] Real migrations (`payload migrate:create`), replacing `ALLOW_SCHEMA_PUSH`
+- [x] Real migrations (`payload migrate:create` + a `migrator` build stage/service)
 - [ ] Custom planning grid (grouped/expandable by program, sorted by start date)
 - [ ] Combinable filters (school/teacher/class/month/program)
 - [ ] PDF export

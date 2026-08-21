@@ -4,6 +4,17 @@ name: easy-course-scheduler
 #   docker compose --env-file .env.prod \
 #     -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 #
+# On a FRESH database (first deploy, or after adding a migration), run the
+# migrator first, or the app starts against an empty schema:
+#   docker compose --env-file .env.prod -f docker-compose.yml \
+#     -f docker-compose.prod.yml run --rm migrator
+# Payload disables filesystem schema auto-push under NODE_ENV=production by
+# design (real migrations should own schema changes once there's real data
+# to protect) — there is no way to opt back into auto-push in production,
+# so real migrations (`payload migrate:create`, committed to the repo) are
+# the only path. Regenerate + commit a new one whenever a collection changes
+# after this deployment holds real data.
+#
 # The --env-file flag is required so docker-compose interpolation reads
 # the same secrets the app does. Postgres credentials are REQUIRED here
 # (":?" not ":-default") rather than falling back to a weak default —
@@ -50,13 +61,25 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET must be set in .env.prod}
       SITE_URL: ${SITE_URL:-}
-      ALLOW_SCHEMA_PUSH: ${ALLOW_SCHEMA_PUSH:-}
     ports: !reset []
     networks: [data, edge]
     deploy:
       resources:
         limits:
           memory: 1g
+
+  # One-off: `run --rm migrator`, never part of `up`. See the file header.
+  migrator:
+    build:
+      context: .
+      target: migrator
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET must be set in .env.prod}
+    networks: [data]
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 networks:
   data:

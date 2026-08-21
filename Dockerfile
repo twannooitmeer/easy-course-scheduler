@@ -32,6 +32,15 @@ RUN \
   else echo "Lockfile not found." && exit 1; \
   fi
 
+# Runs `payload migrate` against DATABASE_URL. Built from `builder`, not
+# `runner`: the runner is Next's trace-pruned standalone output, which
+# doesn't include the payload CLI at all -- migrations need the full
+# toolchain. Not part of the default `up`; invoke explicitly, e.g.:
+#   docker compose --env-file .env.prod -f docker-compose.yml \
+#     -f docker-compose.prod.yml run --rm migrator
+FROM builder AS migrator
+CMD corepack enable pnpm && pnpm exec payload migrate
+
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
