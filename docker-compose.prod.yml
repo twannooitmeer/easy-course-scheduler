@@ -50,6 +50,7 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET must be set in .env.prod}
       SITE_URL: ${SITE_URL:-}
+      ALLOW_SCHEMA_PUSH: ${ALLOW_SCHEMA_PUSH:-}
     ports: !reset []
     networks: [data, edge]
     deploy:
