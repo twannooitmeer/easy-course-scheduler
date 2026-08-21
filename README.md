@@ -82,11 +82,19 @@ docker compose --env-file .env.prod \
 See the comments in `docker-compose.prod.yml` for the network/proxy
 assumptions (an external `edge` network your reverse proxy is already on).
 
+**No real migrations exist yet** — set `ALLOW_SCHEMA_PUSH=true` in
+`.env.prod` for now so Payload pushes the schema on boot (otherwise a
+fresh production database has no tables at all: `relation "users" does
+not exist`). Generate and commit real migrations with `payload
+migrate:create` before this holds any real data you can't afford to lose
+to an auto-push, then stop setting `ALLOW_SCHEMA_PUSH`.
+
 ## Roadmap
 
 - [x] Scaffold: Payload collections for the full data model
 - [x] Booking → lesson generation hook, with tests
 - [x] Bilingual (EN/NL) admin UI and field labels
+- [ ] Real migrations (`payload migrate:create`), replacing `ALLOW_SCHEMA_PUSH`
 - [ ] Custom planning grid (grouped/expandable by program, sorted by start date)
 - [ ] Combinable filters (school/teacher/class/month/program)
 - [ ] PDF export
