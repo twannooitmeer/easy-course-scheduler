@@ -1,0 +1,45 @@
+name: easy-course-scheduler
+
+# Local development compose: spins up Postgres for the Next.js + Payload app
+# running on the host via `pnpm dev`. For a full containerized run (parity
+# test against Dockerfile), also start the `app` service:
+#   docker compose --profile app up
+#
+# A production overlay lives in docker-compose.prod.yml.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: easy-course-scheduler-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-scheduler}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scheduler}
+      POSTGRES_DB: ${POSTGRES_DB:-course_scheduler}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scheduler} -d ${POSTGRES_DB:-course_scheduler}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  app:
+    profiles: [app]
+    build: .
+    image: easy-course-scheduler:local
+    container_name: easy-course-scheduler-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-scheduler}:${POSTGRES_PASSWORD:-scheduler}@postgres:5432/${POSTGRES_DB:-course_scheduler}
+    ports:
+      - "3001:3000"
+
+volumes:
+  pgdata:

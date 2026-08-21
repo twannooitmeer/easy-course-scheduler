@@ -1,0 +1,64 @@
+name: easy-course-scheduler
+
+# Production overlay. Layered on top of docker-compose.yml:
+#   docker compose --env-file .env.prod \
+#     -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# The --env-file flag is required so docker-compose interpolation reads
+# the same secrets the app does. Postgres credentials are REQUIRED here
+# (":?" not ":-default") rather than falling back to a weak default —
+# a real deployment should refuse to start with no password set, not
+# silently boot with one an attacker could guess.
+#
+# What this changes vs. the base compose:
+# - Postgres has no host port exposure; lives on the internal `data` network only.
+# - The `app` service is enabled by default (no profile gate) and joins:
+#     - `data`  -> reach postgres
+#     - `edge`  -> your reverse proxy (nginx / Caddy / Nginx Proxy Manager /
+#                  Traefik) forwards to `easy-course-scheduler-app:3000`.
+#                  `edge` is assumed to already exist as an external network
+#                  your proxy is also attached to.
+#   No host ports for the app either; the proxy reaches it via container DNS.
+# - TZ defaults to UTC; override it in .env.prod to your own timezone so
+#   lesson dates/times line up with the local school week rather than UTC.
+# - .env.prod is the source of truth on the host. Generate PAYLOAD_SECRET
+#   and POSTGRES_PASSWORD with `openssl rand -hex 32`.
+#
+# The app service intentionally does NOT use `env_file:` here — overriding
+# a scalar `env_file: .env` (base compose) with a list via `!reset` silently
+# dropped every var the first time this was deployed (Payload crashed with
+# "missing secret key" because PAYLOAD_SECRET never reached the container,
+# even though `docker compose config` showed no error). Passing each var
+# through `environment:` with `${VAR:?...}` is what compose reliably merges
+# by key regardless of that base/override type mismatch.
+
+services:
+  postgres:
+    ports: !reset []
+    environment:
+      TZ: ${TZ:-UTC}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set in .env.prod}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env.prod}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set in .env.prod}
+    networks: [data]
+
+  app:
+    profiles: !reset []
+    environment:
+      TZ: ${TZ:-UTC}
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET must be set in .env.prod}
+      SITE_URL: ${SITE_URL:-}
+    ports: !reset []
+    networks: [data, edge]
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+networks:
+  data:
+    driver: bridge
+  edge:
+    external: true
