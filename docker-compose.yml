@@ -5,6 +5,12 @@ name: easy-course-scheduler
 # test against Dockerfile), also start the `app` service:
 #   docker compose --profile app up
 #
+# Vars come from `environment:` interpolation (`${VAR}`, reading whichever
+# .env docker compose loads — automatically for local dev, or explicitly via
+# `--env-file .env.prod` for the prod overlay), not `env_file:` — that field
+# turned out to merge unreliably across the two compose files (see
+# docker-compose.prod.yml's comment for what that broke on first deploy).
+#
 # A production overlay lives in docker-compose.prod.yml.
 
 services:
@@ -35,9 +41,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-scheduler}:${POSTGRES_PASSWORD:-scheduler}@postgres:5432/${POSTGRES_DB:-course_scheduler}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+      SITE_URL: ${SITE_URL:-}
     ports:
       - "3001:3000"
 
