@@ -38,6 +38,23 @@ independent of the template afterward.
 | `lessons`            | Generated lesson instances; `teachers` is many-to-many for co-taught lessons |
 | `closures`           | Study days / holidays per school — kept separate so the lesson grid stays lessons-only |
 
+## Planning grid
+
+`/planning` (auth-gated, redirects to `/admin/login` otherwise) is the
+custom view Payload's own admin panel can't render: Bookings grouped by
+school/program and sorted by start date, each expandable into its generated
+Lessons for inline editing (date, time, teacher(s), location, student
+count, status, remark). Built with `@tanstack/react-table` for the outer
+grid; edits save through Server Actions (`planning/actions.ts`) that
+re-check auth and pass `overrideAccess: false` — the Local API bypasses
+collection access control by default, so skipping that would let an
+unauthenticated request through regardless of the page-level redirect.
+
+Creating a new Booking still goes through `/admin/collections/bookings/create`
+(linked from the page) rather than being reimplemented here — Payload's
+generated form for that is already correct, and it's what triggers lesson
+generation either way.
+
 ## Language
 
 Field and collection labels are set as `{ en, nl }` pairs throughout
@@ -63,13 +80,23 @@ instance on port 5433 (or edit the port) before `pnpm dev`.
 
 ```bash
 docker compose up -d postgres
-pnpm test
+pnpm test          # integration (vitest) + e2e (playwright)
+pnpm test:int       # integration only, no browser needed
+pnpm test:e2e       # e2e only; starts/reuses the dev server on :3001
 ```
 
-Covers the booking → lesson-generation hook: correct sequencing and dating,
-no duplicate generation on a later update, and the no-templates-yet case
-failing safely instead of throwing. Runs against the same dev database, so
-`beforeAll` clears the relevant collections first.
+Integration tests cover the booking → lesson-generation hook (correct
+sequencing and dating, no duplicate generation on a later update, the
+no-templates-yet case failing safely) and the planning grid's pure
+data-shaping logic (date/time input conversion, grouping lessons by
+booking). The e2e suite drives the actual planning grid in a real browser:
+the auth redirect when logged out, and a full sign-in → expand a booking →
+edit a lesson → reload → confirm the edit persisted round trip.
+
+Both suites run against the same dev database, so each has its own
+`beforeAll` that clears (or deletes and recreates) its own fixtures first —
+skipping that is exactly how a second run accumulated duplicate rows and
+broke a locator the first time each suite was written.
 
 ## Deployment
 
@@ -104,7 +131,7 @@ assumptions (an external `edge` network your reverse proxy is already on).
 - [x] Booking → lesson generation hook, with tests
 - [x] Bilingual (EN/NL) admin UI and field labels
 - [x] Real migrations (`payload migrate:create` + a `migrator` build stage/service)
-- [ ] Custom planning grid (grouped/expandable by program, sorted by start date)
+- [x] Custom planning grid (grouped/expandable by program, sorted by start date), with e2e coverage
 - [ ] Combinable filters (school/teacher/class/month/program)
 - [ ] PDF export
 - [ ] Status-change email notifications (Resend)

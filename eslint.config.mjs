@@ -1,16 +1,16 @@
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
-import { FlatCompat } from '@eslint/eslintrc'
+import coreWebVitals from 'eslint-config-next/core-web-vitals'
+import nextTypescript from 'eslint-config-next/typescript'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-})
-
+// eslint-config-next ships native flat-config presets (this file's imports)
+// specifically so consumers don't need FlatCompat at all. Going through
+// FlatCompat.extends('next/core-web-vitals', ...) instead crashed outright
+// (`Converting circular structure to JSON`, from eslint-plugin-react's own
+// self-referencing `configs.recommended` object) -- FlatCompat's legacy
+// config-ingestion path tries to validate and JSON.stringify configs meant
+// to be consumed as already-flat, native arrays like these.
 const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  ...coreWebVitals,
+  ...nextTypescript,
   {
     rules: {
       '@typescript-eslint/ban-ts-comment': 'warn',
@@ -31,7 +31,7 @@ const eslintConfig = [
     },
   },
   {
-    ignores: ['.next/', 'src/payload-types.ts', 'src/payload-generated-schema.ts'],
+    ignores: ['.next/', 'src/payload-types.ts', 'src/payload-generated-schema.ts', 'src/migrations/**'],
   },
 ]
 
