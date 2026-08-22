@@ -3,6 +3,9 @@
 import { revalidatePath } from 'next/cache'
 
 import type { Program } from '@/payload-types'
+import { isUniqueFieldViolation } from '../errorHelpers'
+import { DEFAULT_LOCALE, isLocale } from '../i18n/locale'
+import { t } from '../i18n/t'
 import { requireUser } from '../requireUser'
 
 export type ActionResult = { success: true } | { success: false; error: string }
@@ -17,9 +20,10 @@ export type ProgramInput = Partial<
 
 export async function createProgram(data: ProgramInput): Promise<CreateResult> {
   const { payload, user } = await requireUser()
+  const locale = isLocale(user.preferredLanguage) ? user.preferredLanguage : DEFAULT_LOCALE
 
   try {
-    if (!data.name?.trim()) throw new Error('Name is required.')
+    if (!data.name?.trim()) throw new Error(t(locale, 'programs.validationNameRequired'))
     const program = await payload.create({
       collection: 'programs',
       data: { name: data.name, soort: data.soort },
@@ -29,6 +33,9 @@ export async function createProgram(data: ProgramInput): Promise<CreateResult> {
     revalidatePath('/programs')
     return { success: true, id: Number(program.id) }
   } catch (err) {
+    if (isUniqueFieldViolation(err, 'name')) {
+      return { success: false, error: t(locale, 'programs.duplicateName', { name: data.name ?? '' }) }
+    }
     const message = err instanceof Error ? err.message : 'Could not create program'
     return { success: false, error: message }
   }
@@ -36,6 +43,7 @@ export async function createProgram(data: ProgramInput): Promise<CreateResult> {
 
 export async function updateProgram(id: number, data: ProgramInput): Promise<ActionResult> {
   const { payload, user } = await requireUser()
+  const locale = isLocale(user.preferredLanguage) ? user.preferredLanguage : DEFAULT_LOCALE
 
   try {
     await payload.update({ collection: 'programs', id, data, user, overrideAccess: false })
@@ -43,6 +51,9 @@ export async function updateProgram(id: number, data: ProgramInput): Promise<Act
     revalidatePath(`/programs/${id}`)
     return { success: true }
   } catch (err) {
+    if (isUniqueFieldViolation(err, 'name')) {
+      return { success: false, error: t(locale, 'programs.duplicateName', { name: data.name ?? '' }) }
+    }
     const message = err instanceof Error ? err.message : 'Could not save program'
     return { success: false, error: message }
   }

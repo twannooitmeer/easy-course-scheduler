@@ -235,6 +235,31 @@ a {
   font-size: 0.85rem;
 }
 
+.list-toolbar {
+  margin-bottom: 0.85rem;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 320px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--ink);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.search-input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
 .admin-link {
   font: inherit;
   font-size: 0.82rem;

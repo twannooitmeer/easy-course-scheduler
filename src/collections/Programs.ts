@@ -36,6 +36,7 @@ export const Programs: CollectionConfig = {
       name: 'name',
       type: 'text',
       required: true,
+      unique: true,
       label: { en: 'Name', nl: 'Naam' },
     },
     {

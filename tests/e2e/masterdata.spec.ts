@@ -12,6 +12,10 @@ const PROGRAM_NAME = 'E2E Masterdata Program'
 const BOOKINGS_SCHOOL_NAME = `${SCHOOL_NAME} Bookings`
 const BOOKINGS_PROGRAM_NAME = `${PROGRAM_NAME} Bookings`
 const BOOKING_GROUP = 'e2e-masterdata-group'
+const DUPLICATE_SCHOOL_NAME = `${SCHOOL_NAME} Duplicate`
+const DUPLICATE_TEACHER_NAME = `${TEACHER_NAME} Duplicate`
+const DUPLICATE_PROGRAM_NAME = `${PROGRAM_NAME} Duplicate`
+const SEARCH_SCHOOL_NAME = `${SCHOOL_NAME} Zebra`
 
 let payload: Payload
 
@@ -90,6 +94,14 @@ test.beforeAll(async () => {
       status: 'nieuw',
     },
   })
+
+  // Dedicated fixtures for the duplicate-name and search tests, created
+  // directly rather than through the other tests' UI flow so these two
+  // don't depend on run order either.
+  await payload.create({ collection: 'schools', data: { name: DUPLICATE_SCHOOL_NAME } })
+  await payload.create({ collection: 'teachers', data: { displayName: DUPLICATE_TEACHER_NAME, kind: 'person' } })
+  await payload.create({ collection: 'programs', data: { name: DUPLICATE_PROGRAM_NAME } })
+  await payload.create({ collection: 'schools', data: { name: SEARCH_SCHOOL_NAME, city: 'Zebratown' } })
 })
 
 test.afterAll(async () => {
@@ -173,7 +185,12 @@ test('creates a teacher, edits it on its own detail page, and deletes it with a 
   await expect(page.locator('.record-form').getByLabel('Phone')).toHaveValue('0612345678')
 
   await page.goto('/teachers')
-  const teacherRow = page.locator('table.record-table tbody tr', { hasText: TEACHER_NAME })
+  // A plain `hasText: TEACHER_NAME` substring-matches the DUPLICATE_TEACHER_NAME
+  // fixture too ("... Teacher" vs "... Teacher Duplicate") -- match the row
+  // whose name cell is exactly TEACHER_NAME instead.
+  const teacherRow = page
+    .locator('table.record-table tbody tr')
+    .filter({ has: page.locator('td').filter({ hasText: new RegExp(`^${TEACHER_NAME}$`) }) })
   await teacherRow.getByRole('button', { name: 'Remove teacher' }).click()
   await page.locator('dialog.confirm-dialog').getByRole('button', { name: 'Remove' }).click()
   await expect(teacherRow).toBeHidden()
@@ -240,4 +257,52 @@ test("shows a school's bookings on its own detail page", async ({ page }) => {
   const bookingRow = bookingsSection.locator('table.sub-table tbody tr', { hasText: BOOKING_GROUP })
   await expect(bookingRow).toBeVisible()
   await expect(bookingRow).toContainText(BOOKINGS_PROGRAM_NAME)
+})
+
+test('shows a clear "already exists" error instead of a raw validation message on a duplicate name', async ({
+  page,
+}) => {
+  await signIn(page)
+
+  await page.goto('/schools')
+  await page.getByRole('button', { name: '+ New school' }).click()
+  let dialog = page.locator('dialog.new-booking-dialog')
+  await dialog.getByLabel('Name').fill(DUPLICATE_SCHOOL_NAME)
+  await dialog.getByRole('button', { name: 'Create school' }).click()
+  await expect(page.getByText(`A school named "${DUPLICATE_SCHOOL_NAME}" already exists.`)).toBeVisible()
+  await expect(page).not.toHaveURL(/\/schools\/\d+$/)
+
+  await page.goto('/teachers')
+  await page.getByRole('button', { name: '+ New teacher' }).click()
+  dialog = page.locator('dialog.new-booking-dialog')
+  await dialog.getByLabel('Name').fill(DUPLICATE_TEACHER_NAME)
+  await dialog.getByRole('button', { name: 'Create teacher' }).click()
+  await expect(page.getByText(`A teacher named "${DUPLICATE_TEACHER_NAME}" already exists.`)).toBeVisible()
+
+  await page.goto('/programs')
+  await page.getByRole('button', { name: '+ New program' }).click()
+  dialog = page.locator('dialog.new-booking-dialog')
+  await dialog.getByLabel('Name').fill(DUPLICATE_PROGRAM_NAME)
+  await dialog.getByRole('button', { name: 'Create program' }).click()
+  await expect(page.getByText(`A program named "${DUPLICATE_PROGRAM_NAME}" already exists.`)).toBeVisible()
+})
+
+test('the search box narrows the Schools list to matching rows', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/schools')
+
+  const matchingRow = page.locator('table.record-table tbody tr', { hasText: SEARCH_SCHOOL_NAME })
+  const otherRow = page.locator('table.record-table tbody tr', { hasText: BOOKINGS_SCHOOL_NAME })
+  await expect(matchingRow).toBeVisible()
+  await expect(otherRow).toBeVisible()
+
+  await page.getByPlaceholder('Search schools…').fill('Zebratown')
+  await expect(matchingRow).toBeVisible()
+  await expect(otherRow).toBeHidden()
+
+  await page.getByPlaceholder('Search schools…').fill('no school has this in its name at all')
+  await expect(page.getByText(/No schools match/)).toBeVisible()
+
+  await page.getByPlaceholder('Search schools…').fill('')
+  await expect(otherRow).toBeVisible()
 })

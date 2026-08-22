@@ -3,6 +3,9 @@
 import { revalidatePath } from 'next/cache'
 
 import type { Teacher } from '@/payload-types'
+import { isUniqueFieldViolation } from '../errorHelpers'
+import { DEFAULT_LOCALE, isLocale } from '../i18n/locale'
+import { t } from '../i18n/t'
 import { requireUser } from '../requireUser'
 
 export type ActionResult = { success: true } | { success: false; error: string }
@@ -12,6 +15,7 @@ export type TeacherInput = Pick<Teacher, 'displayName' | 'kind' | 'email' | 'pho
 
 export async function createTeacher(data: TeacherInput): Promise<CreateResult> {
   const { payload, user } = await requireUser()
+  const locale = isLocale(user.preferredLanguage) ? user.preferredLanguage : DEFAULT_LOCALE
 
   try {
     const teacher = await payload.create({
@@ -23,6 +27,9 @@ export async function createTeacher(data: TeacherInput): Promise<CreateResult> {
     revalidatePath('/teachers')
     return { success: true, id: Number(teacher.id) }
   } catch (err) {
+    if (isUniqueFieldViolation(err, 'displayName')) {
+      return { success: false, error: t(locale, 'teachers.duplicateName', { name: data.displayName }) }
+    }
     const message = err instanceof Error ? err.message : 'Could not create teacher'
     return { success: false, error: message }
   }
@@ -30,6 +37,7 @@ export async function createTeacher(data: TeacherInput): Promise<CreateResult> {
 
 export async function updateTeacher(id: number, data: Partial<TeacherInput>): Promise<ActionResult> {
   const { payload, user } = await requireUser()
+  const locale = isLocale(user.preferredLanguage) ? user.preferredLanguage : DEFAULT_LOCALE
 
   try {
     await payload.update({ collection: 'teachers', id, data, user, overrideAccess: false })
@@ -37,6 +45,9 @@ export async function updateTeacher(id: number, data: Partial<TeacherInput>): Pr
     revalidatePath(`/teachers/${id}`)
     return { success: true }
   } catch (err) {
+    if (isUniqueFieldViolation(err, 'displayName')) {
+      return { success: false, error: t(locale, 'teachers.duplicateName', { name: data.displayName ?? '' }) }
+    }
     const message = err instanceof Error ? err.message : 'Could not save teacher'
     return { success: false, error: message }
   }
