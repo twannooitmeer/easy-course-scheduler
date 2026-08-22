@@ -3,8 +3,12 @@
 import { useRouter } from 'next/navigation'
 
 import type { Program } from '@/payload-types'
+import { useLocale } from '../i18n/LocaleProvider'
 import { NewProgramDialog } from './NewProgramDialog'
 
+// Deliberately not translated — see the comment on Programs.ts `soort`:
+// regulier/maatwerk/CMK/KBW are the deployment's own Dutch domain
+// vocabulary in both languages, not English terms needing translation.
 const SOORT_LABEL: Record<string, string> = {
   regulier: 'Regulier',
   maatwerk: 'Maatwerk',
@@ -14,21 +18,22 @@ const SOORT_LABEL: Record<string, string> = {
 
 export function ProgramsList({ programs }: { programs: (Program & { lessonTemplateCount: number })[] }) {
   const router = useRouter()
+  const { t } = useLocale()
 
   return (
     <div className="page">
       <div className="page-header">
         <div>
-          <h1>Programs</h1>
-          <p className="subtitle">Lesson series that schools book onto.</p>
+          <h1>{t('programs.title')}</h1>
+          <p className="subtitle">{t('programs.subtitle')}</p>
         </div>
         <NewProgramDialog />
       </div>
 
       {programs.length === 0 ? (
         <div className="empty-state">
-          <p>No programs yet.</p>
-          <p>Use the + New program button above to add one.</p>
+          <p>{t('programs.emptyTitle')}</p>
+          <p>{t('programs.emptyHint')}</p>
         </div>
       ) : (
         <div className="grid-card">
@@ -36,21 +41,21 @@ export function ProgramsList({ programs }: { programs: (Program & { lessonTempla
             <table className="record-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Soort</th>
-                  <th>Lessons</th>
-                  <th>Price</th>
-                  <th>Active</th>
+                  <th>{t('programs.columnName')}</th>
+                  <th>{t('programs.columnSoort')}</th>
+                  <th>{t('programs.columnLessons')}</th>
+                  <th>{t('programs.columnPrice')}</th>
+                  <th>{t('programs.columnActive')}</th>
                 </tr>
               </thead>
               <tbody>
                 {programs.map((program) => (
                   <tr key={program.id} onClick={() => router.push(`/programs/${program.id}`)}>
                     <td>{program.name}</td>
-                    <td>{program.soort ? SOORT_LABEL[program.soort] : '—'}</td>
+                    <td>{program.soort ? SOORT_LABEL[program.soort] : t('common.none')}</td>
                     <td>{program.lessonTemplateCount}</td>
-                    <td>{program.price != null ? `€${program.price}` : '—'}</td>
-                    <td>{program.active === false ? 'No' : 'Yes'}</td>
+                    <td>{program.price != null ? `€${program.price}` : t('common.none')}</td>
+                    <td>{program.active === false ? t('common.no') : t('common.yes')}</td>
                   </tr>
                 ))}
               </tbody>

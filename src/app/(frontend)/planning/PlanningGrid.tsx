@@ -11,6 +11,7 @@ import {
 import { Fragment, useRef, useState, useTransition } from 'react'
 
 import { ConfirmDialog, type ConfirmDialogHandle } from '../ConfirmDialog'
+import { useLocale } from '../i18n/LocaleProvider'
 import { deleteBooking, updateBooking } from './actions'
 import { fromDateInputValue, toDateInputValue } from './dateHelpers'
 import { LessonsPanel } from './LessonsPanel'
@@ -79,15 +80,14 @@ export function PlanningGrid({
   bookings: BookingWithLessons[]
   teacherOptions: TeacherOption[]
 }) {
+  const { t } = useLocale()
   const [expanded, setExpanded] = useState<ExpandedState>({})
   const [error, setError] = useState<string | null>(null)
   const confirmRef = useRef<ConfirmDialogHandle>(null)
 
   async function handleRequestDeleteBooking(id: number, e: React.MouseEvent) {
     e.stopPropagation()
-    const ok = await confirmRef.current?.confirm(
-      'Remove this booking and all of its lessons? This cannot be undone.',
-    )
+    const ok = await confirmRef.current?.confirm(t('planning.confirmRemoveBooking'))
     if (!ok) return
 
     setError(null)
@@ -108,27 +108,27 @@ export function PlanningGrid({
     }),
     columnHelper.accessor((row) => (typeof row.school === 'object' ? row.school.name : row.school), {
       id: 'school',
-      header: 'School',
+      header: t('planning.columnSchool'),
     }),
     columnHelper.accessor((row) => (typeof row.program === 'object' ? row.program.name : row.program), {
       id: 'program',
-      header: 'Program',
+      header: t('planning.columnProgram'),
     }),
     columnHelper.accessor('groupLabel', {
-      header: 'Group',
-      cell: (info) => info.getValue() || '—',
+      header: t('planning.columnGroup'),
+      cell: (info) => info.getValue() || t('common.none'),
     }),
     columnHelper.accessor('startDate', {
-      header: 'Start date',
+      header: t('planning.columnStartDate'),
       cell: (info) => <StartDateInput bookingId={info.row.original.id} startDate={info.getValue()} />,
     }),
     columnHelper.accessor('status', {
-      header: 'Status',
+      header: t('planning.columnStatus'),
       cell: (info) => <StatusSelect bookingId={info.row.original.id} status={info.getValue()} />,
     }),
     columnHelper.accessor((row) => row.lessons.length, {
       id: 'lessonCount',
-      header: 'Lessons',
+      header: t('planning.columnLessons'),
       cell: (info) => <span className="lesson-count">{info.getValue()}</span>,
     }),
     columnHelper.display({
@@ -137,10 +137,12 @@ export function PlanningGrid({
       cell: ({ row }) => (
         <button
           type="button"
-          className="icon-button"
+          className="delete-button"
+          aria-label={t('planning.removeBooking')}
+          title={t('planning.removeBooking')}
           onClick={(e) => handleRequestDeleteBooking(row.original.id, e)}
         >
-          Remove
+          ✕
         </button>
       ),
     }),
@@ -160,8 +162,8 @@ export function PlanningGrid({
   if (bookings.length === 0) {
     return (
       <div className="empty-state">
-        <p>No bookings yet.</p>
-        <p>Use the + New booking button above to book a school onto a program and see its generated lessons here.</p>
+        <p>{t('planning.emptyTitle')}</p>
+        <p>{t('planning.emptyHint')}</p>
       </div>
     )
   }

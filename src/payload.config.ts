@@ -12,10 +12,12 @@ import { Closures } from './collections/Closures'
 import { Contacts } from './collections/Contacts'
 import { LessonTemplates } from './collections/LessonTemplates'
 import { Lessons } from './collections/Lessons'
+import { Media } from './collections/Media'
 import { Programs } from './collections/Programs'
 import { Schools } from './collections/Schools'
 import { Teachers } from './collections/Teachers'
 import { Users } from './collections/Users'
+import { SiteSettings } from './globals/SiteSettings'
 import { migrations } from './migrations'
 
 const filename = fileURLToPath(import.meta.url)
@@ -49,7 +51,9 @@ export default buildConfig({
     Bookings,
     Lessons,
     Closures,
+    Media,
   ],
+  globals: [SiteSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

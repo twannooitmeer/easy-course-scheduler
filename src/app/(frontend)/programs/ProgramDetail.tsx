@@ -5,11 +5,12 @@ import { useRef, useState, useTransition } from 'react'
 
 import type { LessonTemplate, Program, Teacher } from '@/payload-types'
 import { ConfirmDialog, type ConfirmDialogHandle } from '../ConfirmDialog'
+import { useLocale } from '../i18n/LocaleProvider'
 import { AddLessonTemplateDialog } from './AddLessonTemplateDialog'
 import { deleteLessonTemplate, updateProgram, type ProgramInput } from './actions'
 
-function teacherName(teacher: LessonTemplate['defaultTeacher']): string {
-  if (!teacher) return '—'
+function teacherName(teacher: LessonTemplate['defaultTeacher'], none: string): string {
+  if (!teacher) return none
   return typeof teacher === 'object' ? teacher.displayName : `#${teacher}`
 }
 
@@ -22,6 +23,7 @@ export function ProgramDetail({
   lessonTemplates: LessonTemplate[]
   teachers: Teacher[]
 }) {
+  const { t } = useLocale()
   const [form, setForm] = useState<ProgramInput>({
     name: program.name,
     description: program.description ?? '',
@@ -80,9 +82,7 @@ export function ProgramDetail({
   }
 
   async function handleRemoveLessonTemplate(template: LessonTemplate) {
-    const ok = await confirmRef.current?.confirm(
-      `Remove lesson ${template.sequenceNo} from this program? This cannot be undone.`,
-    )
+    const ok = await confirmRef.current?.confirm(t('programs.confirmRemoveLesson', { seq: template.sequenceNo }))
     if (!ok) return
     const result = await deleteLessonTemplate(template.id, program.id)
     if (!result.success) setError(result.error)
@@ -91,14 +91,14 @@ export function ProgramDetail({
   return (
     <div className="page">
       <Link href="/programs" className="back-link">
-        ← Back to programs
+        {t('programs.backLink')}
       </Link>
       <div className="page-header">
         <div>
           <h1>{program.name}</h1>
           <p className="subtitle">
-            {isPending && <span className="saving-dot" title="Saving…" />}
-            {saved && !isPending && <span className="saved-hint"> Saved</span>}
+            {isPending && <span className="saving-dot" title={t('common.saving')} />}
+            {saved && !isPending && <span className="saved-hint"> {t('common.saved')}</span>}
           </p>
         </div>
       </div>
@@ -107,13 +107,14 @@ export function ProgramDetail({
 
       <form className="record-form" onSubmit={(e) => e.preventDefault()}>
         <label className="field-full">
-          Name
+          {t('programs.fieldName')}
           <input type="text" {...textField('name')} required />
         </label>
         <label>
-          Soort
+          {t('programs.fieldSoort')}
+          {/* Soort option labels stay in Dutch on purpose — see ProgramsList.tsx SOORT_LABEL comment. */}
           <select value={form.soort ?? ''} onChange={handleSoortChange}>
-            <option value="">—</option>
+            <option value="">{t('programs.soortNone')}</option>
             <option value="regulier">Regulier</option>
             <option value="maatwerk">Maatwerk</option>
             <option value="cmk">CMK</option>
@@ -121,42 +122,42 @@ export function ProgramDetail({
           </select>
         </label>
         <label>
-          Price (€)
+          {t('programs.fieldPrice')}
           <input type="number" min={0} {...numberField('price')} />
         </label>
         <label>
-          Default lesson count
+          {t('programs.fieldDefaultLessonCount')}
           <input type="number" min={1} {...numberField('defaultLessonCount')} />
         </label>
         <label>
-          Default lesson duration (minutes)
+          {t('programs.fieldDefaultLessonDuration')}
           <input type="number" min={1} {...numberField('defaultLessonDurationMinutes')} />
         </label>
         <label className="checkbox-row">
           <input type="checkbox" checked={form.active ?? true} onChange={handleActiveChange} />
-          Active
+          {t('programs.fieldActive')}
         </label>
         <label className="field-full">
-          Description
+          {t('programs.fieldDescription')}
           <textarea {...textField('description')} />
         </label>
       </form>
 
       <div className="sub-section">
         <div className="sub-section-header">
-          <h2>Lessons</h2>
+          <h2>{t('programs.lessonsHeading')}</h2>
           <AddLessonTemplateDialog programId={program.id} teachers={teachers} />
         </div>
 
         {lessonTemplates.length === 0 ? (
-          <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>No lessons yet.</p>
+          <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>{t('programs.noLessonsYet')}</p>
         ) : (
           <table className="sub-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Duration</th>
-                <th>Default teacher</th>
+                <th>{t('programs.lessonColumnSeq')}</th>
+                <th>{t('programs.lessonColumnDuration')}</th>
+                <th>{t('programs.lessonColumnDefaultTeacher')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -164,11 +165,17 @@ export function ProgramDetail({
               {lessonTemplates.map((template) => (
                 <tr key={template.id}>
                   <td>{template.sequenceNo}</td>
-                  <td>{template.durationMinutes ?? '—'} min</td>
-                  <td>{teacherName(template.defaultTeacher)}</td>
+                  <td>{template.durationMinutes ?? t('common.none')} min</td>
+                  <td>{teacherName(template.defaultTeacher, t('common.none'))}</td>
                   <td>
-                    <button type="button" className="icon-button" onClick={() => handleRemoveLessonTemplate(template)}>
-                      Remove
+                    <button
+                      type="button"
+                      className="delete-button"
+                      aria-label={t('programs.removeLesson')}
+                      title={t('programs.removeLesson')}
+                      onClick={() => handleRemoveLessonTemplate(template)}
+                    >
+                      ✕
                     </button>
                   </td>
                 </tr>

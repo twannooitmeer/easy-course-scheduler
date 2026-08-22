@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRef, useState, useTransition } from 'react'
 
+import { useLocale } from '../i18n/LocaleProvider'
 import { createBooking } from './actions'
 import type { ProgramOption, SchoolOption } from './types'
 
@@ -13,6 +14,7 @@ export function NewBookingDialog({
   schoolOptions: SchoolOption[]
   programOptions: ProgramOption[]
 }) {
+  const { t } = useLocale()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const [error, setError] = useState<string | null>(null)
@@ -40,7 +42,7 @@ export function NewBookingDialog({
     const startDate = String(form.get('startDate') || '')
 
     if (!school || !program || !startDate) {
-      setError('School, program, and start date are all required.')
+      setError(t('planning.validationRequired'))
       return
     }
 
@@ -62,29 +64,25 @@ export function NewBookingDialog({
   return (
     <>
       <button type="button" className="admin-link" onClick={open}>
-        + New booking
+        {t('planning.newBooking')}
       </button>
       <dialog ref={dialogRef} className="new-booking-dialog">
         <form ref={formRef} onSubmit={handleSubmit}>
-          <h2>New booking</h2>
-          <p className="dialog-subtitle">
-            Book a school onto a program — its lessons generate automatically from the program&apos;s
-            lesson templates.
-          </p>
+          <h2>{t('planning.newBookingDialogTitle')}</h2>
+          <p className="dialog-subtitle">{t('planning.newBookingDialogSubtitle')}</p>
 
           {schoolOptions.length === 0 || programOptions.length === 0 ? (
             <p className="dialog-warning">
-              You need at least one school and one program before you can create a booking. Set those up
-              in <Link href="/admin">the admin panel</Link> first — that part is genuinely one-time setup, not
-              daily work.
+              {t('planning.newBookingWarningNoData')}{' '}
+              <Link href="/schools">{t('planning.schoolsLink')}</Link> · <Link href="/programs">{t('planning.programsLink')}</Link>
             </p>
           ) : (
             <>
               <label>
-                School
+                {t('planning.columnSchool')}
                 <select name="school" required defaultValue="">
                   <option value="" disabled>
-                    Select a school…
+                    {t('planning.selectSchoolPlaceholder')}
                   </option>
                   {schoolOptions.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -95,10 +93,10 @@ export function NewBookingDialog({
               </label>
 
               <label>
-                Program
+                {t('planning.columnProgram')}
                 <select name="program" required defaultValue="">
                   <option value="" disabled>
-                    Select a program…
+                    {t('planning.selectProgramPlaceholder')}
                   </option>
                   {programOptions.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -109,12 +107,12 @@ export function NewBookingDialog({
               </label>
 
               <label>
-                Group (optional)
-                <input type="text" name="groupLabel" placeholder="e.g. 3a" />
+                {t('planning.groupOptional')}
+                <input type="text" name="groupLabel" placeholder={t('planning.groupPlaceholder')} />
               </label>
 
               <label>
-                Start date
+                {t('planning.startDate')}
                 <input type="date" name="startDate" required />
               </label>
             </>
@@ -124,11 +122,11 @@ export function NewBookingDialog({
 
           <div className="dialog-actions">
             <button type="button" onClick={close} disabled={isPending}>
-              Cancel
+              {t('common.cancel')}
             </button>
             {schoolOptions.length > 0 && programOptions.length > 0 && (
               <button type="submit" className="primary" disabled={isPending}>
-                {isPending ? 'Creating…' : 'Create booking'}
+                {isPending ? t('planning.creatingBooking') : t('planning.createBooking')}
               </button>
             )}
           </div>

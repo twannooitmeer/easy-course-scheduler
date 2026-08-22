@@ -34,6 +34,7 @@ export async function updateTeacher(id: number, data: Partial<TeacherInput>): Pr
   try {
     await payload.update({ collection: 'teachers', id, data, user, overrideAccess: false })
     revalidatePath('/teachers')
+    revalidatePath(`/teachers/${id}`)
     return { success: true }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Could not save teacher'

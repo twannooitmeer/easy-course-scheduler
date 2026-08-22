@@ -28,13 +28,31 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
     notFound()
   }
 
-  const contactsResult = await payload.find({
-    collection: 'contacts',
-    depth: 0,
-    where: { school: { equals: schoolId } },
-    sort: 'fullName',
-    limit: 500,
-  })
+  const [contactsResult, bookingsResult] = await Promise.all([
+    payload.find({
+      collection: 'contacts',
+      depth: 0,
+      where: { school: { equals: schoolId } },
+      sort: 'fullName',
+      limit: 500,
+    }),
+    payload.find({
+      collection: 'bookings',
+      depth: 1,
+      where: { school: { equals: schoolId } },
+      sort: '-startDate',
+      limit: 500,
+    }),
+  ])
 
-  return <SchoolDetail school={school} contacts={contactsResult.docs} />
+  const bookings = bookingsResult.docs.map((booking) => ({
+    id: Number(booking.id),
+    schoolName: school.name,
+    programName: typeof booking.program === 'object' ? booking.program.name : String(booking.program),
+    groupLabel: booking.groupLabel,
+    startDate: booking.startDate,
+    status: booking.status,
+  }))
+
+  return <SchoolDetail school={school} contacts={contactsResult.docs} bookings={bookings} />
 }

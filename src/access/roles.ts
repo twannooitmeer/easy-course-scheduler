@@ -16,3 +16,10 @@ export const isAuthenticated: Access = ({ req: { user } }) => Boolean(user)
 export const isAuthenticatedField: FieldAccess = ({ req: { user } }) => Boolean(user)
 
 export const anyone: Access = () => true
+
+/**
+ * First real use of the `role` field beyond display: gates the
+ * organisation-wide SiteSettings global (name/logo) to admins, since that
+ * affects every user's nav, not just the editor's own records.
+ */
+export const isAdmin: Access = ({ req: { user } }) => user?.role === 'admin'

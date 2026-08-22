@@ -3,9 +3,11 @@
 import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
 
+import { useLocale } from '../i18n/LocaleProvider'
 import { createSchool } from './actions'
 
 export function NewSchoolDialog() {
+  const { t } = useLocale()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const [error, setError] = useState<string | null>(null)
@@ -30,7 +32,7 @@ export function NewSchoolDialog() {
     const city = String(form.get('city') || '').trim()
 
     if (!name) {
-      setError('Name is required.')
+      setError(t('schools.validationNameRequired'))
       return
     }
     setError(null)
@@ -49,19 +51,19 @@ export function NewSchoolDialog() {
   return (
     <>
       <button type="button" className="admin-link" onClick={open}>
-        + New school
+        {t('schools.newSchool')}
       </button>
       <dialog ref={dialogRef} className="new-booking-dialog">
         <form ref={formRef} onSubmit={handleSubmit}>
-          <h2>New school</h2>
-          <p className="dialog-subtitle">Add the rest of the details afterward on the school&apos;s own page.</p>
+          <h2>{t('schools.newSchoolDialogTitle')}</h2>
+          <p className="dialog-subtitle">{t('schools.newSchoolDialogSubtitle')}</p>
 
           <label>
-            Name
+            {t('schools.fieldName')}
             <input type="text" name="name" required />
           </label>
           <label>
-            City (optional)
+            {t('schools.cityOptional')}
             <input type="text" name="city" />
           </label>
 
@@ -69,10 +71,10 @@ export function NewSchoolDialog() {
 
           <div className="dialog-actions">
             <button type="button" onClick={close} disabled={isPending}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="primary" disabled={isPending}>
-              {isPending ? 'Creating…' : 'Create school'}
+              {isPending ? t('schools.creatingSchool') : t('schools.createSchool')}
             </button>
           </div>
         </form>

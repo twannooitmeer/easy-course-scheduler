@@ -3,9 +3,11 @@
 import { useRef, useState, useTransition } from 'react'
 
 import type { Teacher } from '@/payload-types'
+import { useLocale } from '../i18n/LocaleProvider'
 import { createLessonTemplate } from './actions'
 
 export function AddLessonTemplateDialog({ programId, teachers }: { programId: number; teachers: Teacher[] }) {
+  const { t } = useLocale()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const [error, setError] = useState<string | null>(null)
@@ -46,20 +48,20 @@ export function AddLessonTemplateDialog({ programId, teachers }: { programId: nu
   return (
     <>
       <button type="button" className="icon-button" onClick={open}>
-        + Add lesson
+        {t('programs.addLesson')}
       </button>
       <dialog ref={dialogRef} className="new-booking-dialog">
         <form ref={formRef} onSubmit={handleSubmit}>
-          <h2>Add lesson</h2>
+          <h2>{t('programs.addLessonDialogTitle')}</h2>
 
           <label>
-            Duration (minutes)
+            {t('programs.durationLabel')}
             <input type="number" name="durationMinutes" min={1} defaultValue={60} />
           </label>
           <label>
-            Default teacher
+            {t('programs.defaultTeacherLabel')}
             <select name="defaultTeacher" defaultValue="">
-              <option value="">—</option>
+              <option value="">{t('common.none')}</option>
               {teachers.map((teacher) => (
                 <option key={teacher.id} value={teacher.id}>
                   {teacher.displayName}
@@ -72,10 +74,10 @@ export function AddLessonTemplateDialog({ programId, teachers }: { programId: nu
 
           <div className="dialog-actions">
             <button type="button" onClick={close} disabled={isPending}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="primary" disabled={isPending}>
-              {isPending ? 'Adding…' : 'Add lesson'}
+              {isPending ? t('programs.addingLesson') : t('programs.addLessonButton')}
             </button>
           </div>
         </form>

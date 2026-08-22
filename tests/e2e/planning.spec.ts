@@ -71,7 +71,13 @@ test.beforeAll(async () => {
   if (existingUser.totalDocs === 0) {
     await payload.create({
       collection: 'users',
-      data: { email: TEST_USER_EMAIL, password: TEST_USER_PASSWORD, name: 'E2E Test User', role: 'admin' },
+      data: {
+        email: TEST_USER_EMAIL,
+        password: TEST_USER_PASSWORD,
+        name: 'E2E Test User',
+        role: 'admin',
+        preferredLanguage: 'en',
+      },
     })
   }
 

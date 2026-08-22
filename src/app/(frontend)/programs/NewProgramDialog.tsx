@@ -4,9 +4,11 @@ import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
 
 import type { Program } from '@/payload-types'
+import { useLocale } from '../i18n/LocaleProvider'
 import { createProgram } from './actions'
 
 export function NewProgramDialog() {
+  const { t } = useLocale()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const [error, setError] = useState<string | null>(null)
@@ -31,7 +33,7 @@ export function NewProgramDialog() {
     const soort = String(form.get('soort') || '')
 
     if (!name) {
-      setError('Name is required.')
+      setError(t('programs.validationNameRequired'))
       return
     }
     setError(null)
@@ -50,21 +52,22 @@ export function NewProgramDialog() {
   return (
     <>
       <button type="button" className="admin-link" onClick={open}>
-        + New program
+        {t('programs.newProgram')}
       </button>
       <dialog ref={dialogRef} className="new-booking-dialog">
         <form ref={formRef} onSubmit={handleSubmit}>
-          <h2>New program</h2>
-          <p className="dialog-subtitle">Add the rest of the details afterward on the program&apos;s own page.</p>
+          <h2>{t('programs.newProgramDialogTitle')}</h2>
+          <p className="dialog-subtitle">{t('programs.newProgramDialogSubtitle')}</p>
 
           <label>
-            Name
+            {t('programs.fieldName')}
             <input type="text" name="name" required />
           </label>
           <label>
-            Soort (optional)
+            {t('programs.soortOptional')}
+            {/* Soort option labels stay in Dutch on purpose — see ProgramsList.tsx SOORT_LABEL comment. */}
             <select name="soort" defaultValue="">
-              <option value="">—</option>
+              <option value="">{t('programs.soortNone')}</option>
               <option value="regulier">Regulier</option>
               <option value="maatwerk">Maatwerk</option>
               <option value="cmk">CMK</option>
@@ -76,10 +79,10 @@ export function NewProgramDialog() {
 
           <div className="dialog-actions">
             <button type="button" onClick={close} disabled={isPending}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="primary" disabled={isPending}>
-              {isPending ? 'Creating…' : 'Create program'}
+              {isPending ? t('programs.creatingProgram') : t('programs.createProgram')}
             </button>
           </div>
         </form>

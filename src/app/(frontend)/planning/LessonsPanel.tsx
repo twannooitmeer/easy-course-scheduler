@@ -4,8 +4,10 @@ import { useRef, useState, useTransition } from 'react'
 
 import type { Lesson } from '@/payload-types'
 import { ConfirmDialog, type ConfirmDialogHandle } from '../ConfirmDialog'
+import { useLocale } from '../i18n/LocaleProvider'
 import { createLesson, deleteLesson, updateLesson, type LessonUpdateInput } from './actions'
 import { fromDateInputValue, fromTimeInputValue, toDateInputValue, toTimeInputValue } from './dateHelpers'
+import { TeacherPicker } from './TeacherPicker'
 import { STATUS_OPTIONS, type TeacherOption } from './types'
 
 function LessonRow({
@@ -17,6 +19,7 @@ function LessonRow({
   teacherOptions: TeacherOption[]
   onRequestDelete: (id: number) => void
 }) {
+  const { t } = useLocale()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [local, setLocal] = useState(() => ({
@@ -36,7 +39,7 @@ function LessonRow({
       try {
         await updateLesson(lesson.id, data)
       } catch {
-        setError('Could not save — try again')
+        setError(t('planning.saveError'))
       }
     })
   }
@@ -72,22 +75,14 @@ function LessonRow({
         />
       </td>
       <td>
-        <select
-          multiple
-          className="cell-select"
-          value={local.teacherIds.map(String)}
-          onChange={(e) => {
-            const ids = Array.from(e.target.selectedOptions).map((o) => Number(o.value))
+        <TeacherPicker
+          selectedIds={local.teacherIds}
+          options={teacherOptions}
+          onChange={(ids) => {
             setLocal((s) => ({ ...s, teacherIds: ids }))
             save({ teachers: ids })
           }}
-        >
-          {teacherOptions.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.displayName}
-            </option>
-          ))}
-        </select>
+        />
       </td>
       <td>
         <input
@@ -139,12 +134,18 @@ function LessonRow({
         />
       </td>
       <td>
-        {isPending && <span className="saving-dot" title="Saving…" />}
+        {isPending && <span className="saving-dot" title={t('common.saving')} />}
         {error && <span style={{ color: '#b91c1c', fontSize: '0.72rem' }}>{error}</span>}
       </td>
       <td>
-        <button type="button" className="icon-button" onClick={() => onRequestDelete(lesson.id)}>
-          Remove
+        <button
+          type="button"
+          className="delete-button"
+          aria-label={t('planning.removeLesson')}
+          title={t('planning.removeLesson')}
+          onClick={() => onRequestDelete(lesson.id)}
+        >
+          ✕
         </button>
       </td>
     </tr>
@@ -160,14 +161,13 @@ export function LessonsPanel({
   lessons: Lesson[]
   teacherOptions: TeacherOption[]
 }) {
+  const { t } = useLocale()
   const confirmRef = useRef<ConfirmDialogHandle>(null)
   const [isAdding, startAddTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
   async function handleRequestDelete(lessonId: number) {
-    const ok = await confirmRef.current?.confirm(
-      'Remove this lesson? This cannot be undone.',
-    )
+    const ok = await confirmRef.current?.confirm(t('planning.confirmRemoveLesson'))
     if (!ok) return
 
     setError(null)
@@ -188,22 +188,20 @@ export function LessonsPanel({
       {error && <p className="error-banner">{error}</p>}
 
       {lessons.length === 0 ? (
-        <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>
-          No lessons generated for this booking — the program may have no lesson templates yet.
-        </p>
+        <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>{t('planning.emptyLessons')}</p>
       ) : (
         <table className="lessons-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Date</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Teachers</th>
-              <th>Location</th>
-              <th>Students</th>
-              <th>Status</th>
-              <th>Remark</th>
+              <th>{t('planning.lessonColumnSeq')}</th>
+              <th>{t('planning.lessonColumnDate')}</th>
+              <th>{t('planning.lessonColumnStart')}</th>
+              <th>{t('planning.lessonColumnEnd')}</th>
+              <th>{t('planning.lessonColumnTeachers')}</th>
+              <th>{t('planning.lessonColumnLocation')}</th>
+              <th>{t('planning.lessonColumnStudents')}</th>
+              <th>{t('planning.lessonColumnStatus')}</th>
+              <th>{t('planning.lessonColumnRemark')}</th>
               <th></th>
               <th></th>
             </tr>
@@ -222,7 +220,7 @@ export function LessonsPanel({
       )}
 
       <button type="button" className="icon-button add-lesson-button" onClick={handleAddLesson} disabled={isAdding}>
-        {isAdding ? 'Adding…' : '+ Add lesson'}
+        {isAdding ? t('planning.addingLesson') : t('planning.addLesson')}
       </button>
 
       <ConfirmDialog ref={confirmRef} />

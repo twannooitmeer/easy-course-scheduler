@@ -2,6 +2,8 @@
 
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 
+import { useLocale } from './i18n/LocaleProvider'
+
 export type ConfirmDialogHandle = {
   /** Opens the dialog with this message; resolves true/false on the user's choice. */
   confirm: (message: string) => Promise<boolean>
@@ -14,6 +16,7 @@ export type ConfirmDialogHandle = {
  * through this rather than deleting on a single click.
  */
 export const ConfirmDialog = forwardRef<ConfirmDialogHandle>(function ConfirmDialog(_props, ref) {
+  const { t } = useLocale()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [message, setMessage] = useState('')
   const resolverRef = useRef<((value: boolean) => void) | null>(null)
@@ -39,10 +42,10 @@ export const ConfirmDialog = forwardRef<ConfirmDialogHandle>(function ConfirmDia
       <p>{message}</p>
       <div className="dialog-actions">
         <button type="button" onClick={() => respond(false)}>
-          Cancel
+          {t('confirmDialog.cancel')}
         </button>
         <button type="button" className="danger" onClick={() => respond(true)}>
-          Remove
+          {t('confirmDialog.remove')}
         </button>
       </div>
     </dialog>

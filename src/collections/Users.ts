@@ -42,5 +42,20 @@ export const Users: CollectionConfig = {
         { label: { en: 'Staff', nl: 'Medewerker' }, value: 'staff' },
       ],
     },
+    {
+      name: 'preferredLanguage',
+      type: 'select',
+      required: true,
+      defaultValue: 'en',
+      label: { en: 'Preferred language', nl: 'Voorkeurstaal' },
+      admin: {
+        description:
+          'Language for the front-end planning app (/planning, /schools, /teachers, /programs, /settings) — separate from the admin panel\'s own language picker in the account menu, which only affects /admin.',
+      },
+      options: [
+        { label: { en: 'English', nl: 'Engels' }, value: 'en' },
+        { label: { en: 'Dutch', nl: 'Nederlands' }, value: 'nl' },
+      ],
+    },
   ],
 }

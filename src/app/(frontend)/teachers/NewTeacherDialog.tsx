@@ -1,16 +1,19 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
 
+import type { Teacher } from '@/payload-types'
 import { useLocale } from '../i18n/LocaleProvider'
-import { createContact } from './actions'
+import { createTeacher } from './actions'
 
-export function AddContactDialog({ schoolId }: { schoolId: number }) {
+export function NewTeacherDialog() {
   const { t } = useLocale()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   function open() {
     setError(null)
@@ -26,24 +29,20 @@ export function AddContactDialog({ schoolId }: { schoolId: number }) {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = new FormData(e.currentTarget)
-    const fullName = String(form.get('fullName') || '').trim()
+    const displayName = String(form.get('displayName') || '').trim()
+    const kind = String(form.get('kind') || 'person') as Teacher['kind']
 
-    if (!fullName) {
-      setError(t('schools.validationFullNameRequired'))
+    if (!displayName) {
+      setError(t('teachers.validationNameRequired'))
       return
     }
     setError(null)
 
     startTransition(async () => {
-      const result = await createContact(schoolId, {
-        fullName,
-        firstName: String(form.get('firstName') || '') || undefined,
-        lastName: String(form.get('lastName') || '') || undefined,
-        email: String(form.get('email') || '') || undefined,
-        phone: String(form.get('phone') || '') || undefined,
-      })
+      const result = await createTeacher({ displayName, kind })
       if (result.success) {
         close()
+        router.push(`/teachers/${result.id}`)
       } else {
         setError(result.error)
       }
@@ -52,32 +51,24 @@ export function AddContactDialog({ schoolId }: { schoolId: number }) {
 
   return (
     <>
-      <button type="button" className="icon-button" onClick={open}>
-        {t('schools.addContact')}
+      <button type="button" className="admin-link" onClick={open}>
+        {t('teachers.newTeacher')}
       </button>
       <dialog ref={dialogRef} className="new-booking-dialog">
         <form ref={formRef} onSubmit={handleSubmit}>
-          <h2>{t('schools.addContactDialogTitle')}</h2>
+          <h2>{t('teachers.newTeacherDialogTitle')}</h2>
+          <p className="dialog-subtitle">{t('teachers.newTeacherDialogSubtitle')}</p>
 
           <label>
-            {t('schools.fieldFullName')}
-            <input type="text" name="fullName" required />
+            {t('teachers.fieldName')}
+            <input type="text" name="displayName" required />
           </label>
           <label>
-            {t('schools.fieldFirstName')}
-            <input type="text" name="firstName" />
-          </label>
-          <label>
-            {t('schools.fieldLastName')}
-            <input type="text" name="lastName" />
-          </label>
-          <label>
-            {t('common.email')}
-            <input type="email" name="email" />
-          </label>
-          <label>
-            {t('common.phone')}
-            <input type="text" name="phone" />
+            {t('teachers.fieldType')}
+            <select name="kind" defaultValue="person">
+              <option value="person">{t('teachers.typePerson')}</option>
+              <option value="organisation">{t('teachers.typeOrganisation')}</option>
+            </select>
           </label>
 
           {error && <p className="error-banner">{error}</p>}
@@ -87,7 +78,7 @@ export function AddContactDialog({ schoolId }: { schoolId: number }) {
               {t('common.cancel')}
             </button>
             <button type="submit" className="primary" disabled={isPending}>
-              {isPending ? t('schools.addingContact') : t('schools.addContactButton')}
+              {isPending ? t('teachers.creatingTeacher') : t('teachers.createTeacher')}
             </button>
           </div>
         </form>

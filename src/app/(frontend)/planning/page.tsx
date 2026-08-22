@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
+import { DEFAULT_LOCALE, isLocale } from '../i18n/locale'
+import { t } from '../i18n/t'
 import { groupLessonsByBooking } from './groupLessons'
 import { NewBookingDialog } from './NewBookingDialog'
 import { PlanningGrid } from './PlanningGrid'
@@ -53,6 +55,7 @@ export default async function PlanningPage() {
     }),
   ])
 
+  const locale = isLocale(user.preferredLanguage) ? user.preferredLanguage : DEFAULT_LOCALE
   const bookings = groupLessonsByBooking(bookingsResult.docs, lessonsResult.docs)
 
   const teacherOptions = teachersResult.docs.map((teacher) => ({
@@ -69,10 +72,8 @@ export default async function PlanningPage() {
     <div className="page">
       <div className="page-header">
         <div>
-          <h1>Planning</h1>
-          <p className="subtitle">
-            Signed in as {user.name} ({user.email})
-          </p>
+          <h1>{t(locale, 'planning.title')}</h1>
+          <p className="subtitle">{t(locale, 'planning.signedInAs', { name: user.name, email: user.email })}</p>
         </div>
         <NewBookingDialog schoolOptions={schoolOptions} programOptions={programOptions} />
       </div>

@@ -49,14 +49,127 @@ a {
   top: 0;
   height: 100vh;
   overflow-y: auto;
+  transition: width 0.15s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-nav ul {
+  flex: 0 0 auto;
+}
+
+.app-nav-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.app-nav-footer {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.app-nav-admin-link {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.app-nav-admin-link:hover {
+  color: var(--accent);
+}
+
+.app-nav-footer-row {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.app-nav.collapsed .app-nav-footer-row {
+  flex-direction: column;
+}
+
+.app-nav-icon-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.app-nav-icon-link:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.app-nav-icon-link.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.app-nav-icon-link:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.app-nav.collapsed {
+  width: 56px;
+  padding: 1.25rem 0.5rem;
+}
+
+.app-nav-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.app-nav.collapsed .app-nav-header {
+  justify-content: center;
+}
+
+.app-nav-toggle {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.app-nav-toggle:hover {
+  background: var(--paper);
 }
 
 .app-nav-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--ink-soft);
-  margin-bottom: 1.25rem;
   letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .app-nav ul {
@@ -76,6 +189,11 @@ a {
   text-decoration: none;
   font-size: 0.88rem;
   font-weight: 500;
+}
+
+.app-nav.collapsed a {
+  text-align: center;
+  padding: 0.5rem 0.3rem;
 }
 
 .app-nav a:hover {
@@ -644,4 +762,105 @@ table.sub-table tr:last-child td {
 .icon-button:hover {
   border-color: #fca5a5;
   color: #b91c1c;
+}
+
+.delete-button {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  border-radius: 6px;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.delete-button:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: white;
+}
+
+.teacher-picker {
+  display: flex;
+}
+
+.teacher-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.teacher-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 0.15rem 0.3rem 0.15rem 0.55rem;
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.teacher-chip-remove {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0 0.15rem;
+  border-radius: 50%;
+}
+
+.teacher-chip-remove:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.teacher-picker-add {
+  border: 1px dashed var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.teacher-picker-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+dialog.teacher-picker-dialog {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  width: min(320px, 90vw);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+dialog.teacher-picker-dialog::backdrop {
+  background: rgba(15, 18, 24, 0.35);
+}
+
+dialog.teacher-picker-dialog h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.teacher-picker-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 260px;
+  overflow-y: auto;
 }

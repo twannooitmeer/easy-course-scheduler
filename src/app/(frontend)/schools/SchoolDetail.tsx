@@ -4,11 +4,22 @@ import Link from 'next/link'
 import { useRef, useState, useTransition } from 'react'
 
 import type { Contact, School } from '@/payload-types'
+import { BookingsSubSection, type BookingSummary } from '../BookingsSubSection'
 import { ConfirmDialog, type ConfirmDialogHandle } from '../ConfirmDialog'
+import { useLocale } from '../i18n/LocaleProvider'
 import { AddContactDialog } from './AddContactDialog'
 import { deleteContact, updateSchool, type SchoolInput } from './actions'
 
-export function SchoolDetail({ school, contacts }: { school: School; contacts: Contact[] }) {
+export function SchoolDetail({
+  school,
+  contacts,
+  bookings,
+}: {
+  school: School
+  contacts: Contact[]
+  bookings: BookingSummary[]
+}) {
+  const { t } = useLocale()
   const [form, setForm] = useState<SchoolInput>({
     name: school.name,
     street: school.street ?? '',
@@ -49,7 +60,7 @@ export function SchoolDetail({ school, contacts }: { school: School; contacts: C
   }
 
   async function handleRemoveContact(contact: Contact) {
-    const ok = await confirmRef.current?.confirm(`Remove contact "${contact.fullName}"? This cannot be undone.`)
+    const ok = await confirmRef.current?.confirm(t('schools.confirmRemoveContact', { name: contact.fullName }))
     if (!ok) return
     const result = await deleteContact(contact.id, school.id)
     if (!result.success) setError(result.error)
@@ -58,14 +69,14 @@ export function SchoolDetail({ school, contacts }: { school: School; contacts: C
   return (
     <div className="page">
       <Link href="/schools" className="back-link">
-        ← Back to schools
+        {t('schools.backLink')}
       </Link>
       <div className="page-header">
         <div>
           <h1>{school.name}</h1>
           <p className="subtitle">
-            {isPending && <span className="saving-dot" title="Saving…" />}
-            {saved && !isPending && <span className="saved-hint"> Saved</span>}
+            {isPending && <span className="saving-dot" title={t('common.saving')} />}
+            {saved && !isPending && <span className="saved-hint"> {t('common.saved')}</span>}
           </p>
         </div>
       </div>
@@ -77,62 +88,62 @@ export function SchoolDetail({ school, contacts }: { school: School; contacts: C
         onSubmit={(e) => e.preventDefault()}
       >
         <label className="field-full">
-          Name
+          {t('schools.fieldName')}
           <input type="text" {...field('name')} required />
         </label>
         <label>
-          Street
+          {t('schools.fieldStreet')}
           <input type="text" {...field('street')} />
         </label>
         <label>
-          House number
+          {t('schools.fieldHouseNumber')}
           <input type="text" {...field('houseNumber')} />
         </label>
         <label>
-          Addition
+          {t('schools.fieldAddition')}
           <input type="text" {...field('addition')} />
         </label>
         <label>
-          Postal code
+          {t('schools.fieldPostalCode')}
           <input type="text" {...field('postalCode')} />
         </label>
         <label>
-          City
+          {t('schools.fieldCity')}
           <input type="text" {...field('city')} />
         </label>
         <label>
-          Country
+          {t('schools.fieldCountry')}
           <input type="text" {...field('country')} />
         </label>
         <label>
-          Phone
+          {t('schools.fieldPhone')}
           <input type="text" {...field('phone')} />
         </label>
         <label className="field-full">
-          Default location
-          <input type="text" {...field('defaultLocationNote')} placeholder='e.g. "in de klas", "gymlokaal"' />
+          {t('schools.fieldDefaultLocation')}
+          <input type="text" {...field('defaultLocationNote')} placeholder={t('schools.fieldDefaultLocationPlaceholder')} />
         </label>
         <label className="field-full">
-          Notes
+          {t('schools.fieldNotes')}
           <textarea {...field('notes')} />
         </label>
       </form>
 
       <div className="sub-section">
         <div className="sub-section-header">
-          <h2>Contacts</h2>
+          <h2>{t('schools.contactsHeading')}</h2>
           <AddContactDialog schoolId={school.id} />
         </div>
 
         {contacts.length === 0 ? (
-          <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>No contacts yet.</p>
+          <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>{t('schools.noContactsYet')}</p>
         ) : (
           <table className="sub-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
+                <th>{t('schools.contactColumnName')}</th>
+                <th>{t('schools.contactColumnEmail')}</th>
+                <th>{t('schools.contactColumnPhone')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -140,11 +151,17 @@ export function SchoolDetail({ school, contacts }: { school: School; contacts: C
               {contacts.map((contact) => (
                 <tr key={contact.id}>
                   <td>{contact.fullName}</td>
-                  <td>{contact.email || '—'}</td>
-                  <td>{contact.phone || '—'}</td>
+                  <td>{contact.email || t('common.none')}</td>
+                  <td>{contact.phone || t('common.none')}</td>
                   <td>
-                    <button type="button" className="icon-button" onClick={() => handleRemoveContact(contact)}>
-                      Remove
+                    <button
+                      type="button"
+                      className="delete-button"
+                      aria-label={t('schools.removeContact')}
+                      title={t('schools.removeContact')}
+                      onClick={() => handleRemoveContact(contact)}
+                    >
+                      ✕
                     </button>
                   </td>
                 </tr>
@@ -153,6 +170,8 @@ export function SchoolDetail({ school, contacts }: { school: School; contacts: C
           </table>
         )}
       </div>
+
+      <BookingsSubSection bookings={bookings} hideSchool />
 
       <ConfirmDialog ref={confirmRef} />
     </div>
