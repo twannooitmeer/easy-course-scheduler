@@ -6,13 +6,17 @@ import { useRef, useState } from 'react'
 import type { Teacher } from '@/payload-types'
 import { BulkActionsBar } from '../BulkActionsBar'
 import { ConfirmDialog, type ConfirmDialogHandle } from '../ConfirmDialog'
+import { ImportCsvDialog } from '../ImportCsvDialog'
 import { useLocale } from '../i18n/LocaleProvider'
 import { PAGE_SIZE } from '../paginationConfig'
 import { Pagination } from '../Pagination'
 import { SearchInput } from '../SearchInput'
 import { useResetState } from '../useResetState'
-import { deleteTeachers } from './actions'
+import { deleteTeachers, importTeachersCsv } from './actions'
 import { NewTeacherDialog } from './NewTeacherDialog'
+
+const CSV_TEMPLATE_COLUMNS = ['displayName', 'kind', 'email', 'phone', 'active']
+const CSV_TEMPLATE_EXAMPLE = ['Example Teacher', 'person', 'teacher@example.com', '020-1234567', 'true']
 
 export function TeachersList({
   teachers,
@@ -97,7 +101,15 @@ export function TeachersList({
           <h1>{t('teachers.title')}</h1>
           <p className="subtitle">{t('teachers.subtitle')}</p>
         </div>
-        <NewTeacherDialog />
+        <div className="page-header-actions">
+          <ImportCsvDialog
+            entityLabel={t('teachers.title')}
+            templateColumns={CSV_TEMPLATE_COLUMNS}
+            templateExampleRow={CSV_TEMPLATE_EXAMPLE}
+            onImport={importTeachersCsv}
+          />
+          <NewTeacherDialog />
+        </div>
       </div>
 
       {error && <p className="error-banner">{error}</p>}

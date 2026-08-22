@@ -6,13 +6,25 @@ import { useRef, useState } from 'react'
 import type { Program } from '@/payload-types'
 import { BulkActionsBar } from '../BulkActionsBar'
 import { ConfirmDialog, type ConfirmDialogHandle } from '../ConfirmDialog'
+import { ImportCsvDialog } from '../ImportCsvDialog'
 import { useLocale } from '../i18n/LocaleProvider'
 import { PAGE_SIZE } from '../paginationConfig'
 import { Pagination } from '../Pagination'
 import { SearchInput } from '../SearchInput'
 import { useResetState } from '../useResetState'
-import { deletePrograms } from './actions'
+import { deletePrograms, importProgramsCsv } from './actions'
 import { NewProgramDialog } from './NewProgramDialog'
+
+const CSV_TEMPLATE_COLUMNS = [
+  'name',
+  'description',
+  'soort',
+  'defaultLessonCount',
+  'defaultLessonDurationMinutes',
+  'price',
+  'active',
+]
+const CSV_TEMPLATE_EXAMPLE = ['Example Program', '', 'regulier', '8', '60', '250', 'true']
 
 // Deliberately not translated — see the comment on Programs.ts `soort`:
 // regulier/maatwerk/CMK/KBW are the deployment's own Dutch domain
@@ -97,7 +109,15 @@ export function ProgramsList({
           <h1>{t('programs.title')}</h1>
           <p className="subtitle">{t('programs.subtitle')}</p>
         </div>
-        <NewProgramDialog />
+        <div className="page-header-actions">
+          <ImportCsvDialog
+            entityLabel={t('programs.title')}
+            templateColumns={CSV_TEMPLATE_COLUMNS}
+            templateExampleRow={CSV_TEMPLATE_EXAMPLE}
+            onImport={importProgramsCsv}
+          />
+          <NewProgramDialog />
+        </div>
       </div>
 
       {error && <p className="error-banner">{error}</p>}

@@ -3,11 +3,14 @@
 import { revalidatePath } from 'next/cache'
 
 import type { Program } from '@/payload-types'
+import { parseCsvBoolean, parseCsvNumber, parseCsvRows, runCsvImport, type ImportResult } from '../csvImport'
 import { deleteBookingsCascade } from '../deleteCascade'
 import { isUniqueFieldViolation } from '../errorHelpers'
 import { DEFAULT_LOCALE, isLocale } from '../i18n/locale'
 import { t } from '../i18n/t'
 import { requireUser } from '../requireUser'
+
+const SOORT_OPTIONS = ['regulier', 'maatwerk', 'cmk', 'kbw'] as const
 
 export type ActionResult = { success: true } | { success: false; error: string }
 export type CreateResult = { success: true; id: number } | { success: false; error: string }
@@ -58,6 +61,70 @@ export async function updateProgram(id: number, data: ProgramInput): Promise<Act
     const message = err instanceof Error ? err.message : 'Could not save program'
     return { success: false, error: message }
   }
+}
+
+/**
+ * Expected CSV columns: name (required), description, soort (regulier/
+ * maatwerk/cmk/kbw, optional), defaultLessonCount, defaultLessonDurationMinutes,
+ * price, active (true/false, defaults to true) -- matching Programs.ts's own
+ * fields directly.
+ */
+export async function importProgramsCsv(csvText: string): Promise<ImportResult> {
+  const { payload, user } = await requireUser()
+  const locale = isLocale(user.preferredLanguage) ? user.preferredLanguage : DEFAULT_LOCALE
+  const rows = parseCsvRows(csvText)
+
+  const result = await runCsvImport(rows, async (row) => {
+    if (!row.name) throw new Error(t(locale, 'programs.validationNameRequired'))
+
+    const soort = row.soort ? row.soort.toLowerCase() : undefined
+    if (soort && !SOORT_OPTIONS.includes(soort as (typeof SOORT_OPTIONS)[number])) {
+      throw new Error(t(locale, 'csvImport.invalidSoort'))
+    }
+
+    const defaultLessonCount = parseCsvNumber(row.defaultLessonCount)
+    if (defaultLessonCount === 'invalid') {
+      throw new Error(t(locale, 'csvImport.invalidNumber', { field: 'defaultLessonCount' }))
+    }
+    const defaultLessonDurationMinutes = parseCsvNumber(row.defaultLessonDurationMinutes)
+    if (defaultLessonDurationMinutes === 'invalid') {
+      throw new Error(t(locale, 'csvImport.invalidNumber', { field: 'defaultLessonDurationMinutes' }))
+    }
+    const price = parseCsvNumber(row.price)
+    if (price === 'invalid') {
+      throw new Error(t(locale, 'csvImport.invalidNumber', { field: 'price' }))
+    }
+
+    const active = parseCsvBoolean(row.active, true)
+    if (active === 'invalid') {
+      throw new Error(t(locale, 'csvImport.invalidBoolean', { field: 'active' }))
+    }
+
+    try {
+      await payload.create({
+        collection: 'programs',
+        data: {
+          name: row.name,
+          description: row.description || undefined,
+          soort: soort as Program['soort'],
+          defaultLessonCount,
+          defaultLessonDurationMinutes,
+          price,
+          active,
+        },
+        user,
+        overrideAccess: false,
+      })
+    } catch (err) {
+      if (isUniqueFieldViolation(err, 'name')) {
+        throw new Error(t(locale, 'programs.duplicateName', { name: row.name }))
+      }
+      throw err
+    }
+  })
+
+  revalidatePath('/programs')
+  return result
 }
 
 export async function deleteProgram(id: number): Promise<ActionResult> {

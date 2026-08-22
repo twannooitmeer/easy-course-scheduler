@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import type { Contact, School } from '@/payload-types'
+import { parseCsvRows, runCsvImport, type ImportResult } from '../csvImport'
 import { deleteBookingsCascade } from '../deleteCascade'
 import { isUniqueFieldViolation } from '../errorHelpers'
 import { DEFAULT_LOCALE, isLocale } from '../i18n/locale'
@@ -92,6 +93,51 @@ export async function deleteSchools(ids: number[]): Promise<ActionResult> {
     const message = err instanceof Error ? err.message : 'Could not remove schools'
     return { success: false, error: message }
   }
+}
+
+/**
+ * Expected CSV columns: name (required), street, houseNumber, addition,
+ * postalCode, city, country, phone, defaultLocationNote, notes -- matching
+ * Schools.ts's own fields directly, so a spreadsheet exported from this
+ * app's own data (or one someone builds by hand from the field list) needs
+ * no translation layer.
+ */
+export async function importSchoolsCsv(csvText: string): Promise<ImportResult> {
+  const { payload, user } = await requireUser()
+  const locale = isLocale(user.preferredLanguage) ? user.preferredLanguage : DEFAULT_LOCALE
+  const rows = parseCsvRows(csvText)
+
+  const result = await runCsvImport(rows, async (row) => {
+    if (!row.name) throw new Error(t(locale, 'schools.validationNameRequired'))
+
+    try {
+      await payload.create({
+        collection: 'schools',
+        data: {
+          name: row.name,
+          street: row.street || undefined,
+          houseNumber: row.houseNumber || undefined,
+          addition: row.addition || undefined,
+          postalCode: row.postalCode || undefined,
+          city: row.city || undefined,
+          country: row.country || undefined,
+          phone: row.phone || undefined,
+          defaultLocationNote: row.defaultLocationNote || undefined,
+          notes: row.notes || undefined,
+        },
+        user,
+        overrideAccess: false,
+      })
+    } catch (err) {
+      if (isUniqueFieldViolation(err, 'name')) {
+        throw new Error(t(locale, 'schools.duplicateName', { name: row.name }))
+      }
+      throw err
+    }
+  })
+
+  revalidatePath('/schools')
+  return result
 }
 
 export type ContactInput = Pick<Contact, 'fullName' | 'firstName' | 'lastName' | 'email' | 'phone'>

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import type { Teacher } from '@/payload-types'
+import { parseCsvBoolean, parseCsvRows, runCsvImport, type ImportResult } from '../csvImport'
 import { isUniqueFieldViolation } from '../errorHelpers'
 import { DEFAULT_LOCALE, isLocale } from '../i18n/locale'
 import { t } from '../i18n/t'
@@ -51,6 +52,54 @@ export async function updateTeacher(id: number, data: Partial<TeacherInput>): Pr
     const message = err instanceof Error ? err.message : 'Could not save teacher'
     return { success: false, error: message }
   }
+}
+
+/**
+ * Expected CSV columns: displayName (required), kind (person/organisation,
+ * defaults to person), email, phone, active (true/false, defaults to true)
+ * -- matching Teachers.ts's own fields directly.
+ */
+export async function importTeachersCsv(csvText: string): Promise<ImportResult> {
+  const { payload, user } = await requireUser()
+  const locale = isLocale(user.preferredLanguage) ? user.preferredLanguage : DEFAULT_LOCALE
+  const rows = parseCsvRows(csvText)
+
+  const result = await runCsvImport(rows, async (row) => {
+    if (!row.displayName) throw new Error(t(locale, 'teachers.validationNameRequired'))
+
+    const kind = row.kind ? row.kind.toLowerCase() : 'person'
+    if (kind !== 'person' && kind !== 'organisation') {
+      throw new Error(t(locale, 'csvImport.invalidKind'))
+    }
+
+    const active = parseCsvBoolean(row.active, true)
+    if (active === 'invalid') {
+      throw new Error(t(locale, 'csvImport.invalidBoolean', { field: 'active' }))
+    }
+
+    try {
+      await payload.create({
+        collection: 'teachers',
+        data: {
+          displayName: row.displayName,
+          kind,
+          email: row.email || undefined,
+          phone: row.phone || undefined,
+          active,
+        },
+        user,
+        overrideAccess: false,
+      })
+    } catch (err) {
+      if (isUniqueFieldViolation(err, 'displayName')) {
+        throw new Error(t(locale, 'teachers.duplicateName', { name: row.displayName }))
+      }
+      throw err
+    }
+  })
+
+  revalidatePath('/teachers')
+  return result
 }
 
 export async function deleteTeacher(id: number): Promise<ActionResult> {

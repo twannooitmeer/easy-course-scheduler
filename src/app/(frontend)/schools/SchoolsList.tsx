@@ -6,13 +6,39 @@ import { useRef, useState } from 'react'
 import type { School } from '@/payload-types'
 import { BulkActionsBar } from '../BulkActionsBar'
 import { ConfirmDialog, type ConfirmDialogHandle } from '../ConfirmDialog'
+import { ImportCsvDialog } from '../ImportCsvDialog'
 import { useLocale } from '../i18n/LocaleProvider'
 import { PAGE_SIZE } from '../paginationConfig'
 import { Pagination } from '../Pagination'
 import { SearchInput } from '../SearchInput'
 import { useResetState } from '../useResetState'
-import { deleteSchools } from './actions'
+import { deleteSchools, importSchoolsCsv } from './actions'
 import { NewSchoolDialog } from './NewSchoolDialog'
+
+const CSV_TEMPLATE_COLUMNS = [
+  'name',
+  'street',
+  'houseNumber',
+  'addition',
+  'postalCode',
+  'city',
+  'country',
+  'phone',
+  'defaultLocationNote',
+  'notes',
+]
+const CSV_TEMPLATE_EXAMPLE = [
+  'Example School',
+  'Main Street',
+  '1',
+  '',
+  '1234 AB',
+  'Amsterdam',
+  'Nederland',
+  '020-1234567',
+  'gymlokaal',
+  '',
+]
 
 export function SchoolsList({
   schools,
@@ -87,7 +113,15 @@ export function SchoolsList({
           <h1>{t('schools.title')}</h1>
           <p className="subtitle">{t('schools.subtitle')}</p>
         </div>
-        <NewSchoolDialog />
+        <div className="page-header-actions">
+          <ImportCsvDialog
+            entityLabel={t('schools.title')}
+            templateColumns={CSV_TEMPLATE_COLUMNS}
+            templateExampleRow={CSV_TEMPLATE_EXAMPLE}
+            onImport={importSchoolsCsv}
+          />
+          <NewSchoolDialog />
+        </div>
       </div>
 
       {error && <p className="error-banner">{error}</p>}

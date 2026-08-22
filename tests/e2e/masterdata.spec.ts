@@ -18,6 +18,9 @@ const DUPLICATE_PROGRAM_NAME = `${PROGRAM_NAME} Duplicate`
 const SEARCH_SCHOOL_NAME = `${SCHOOL_NAME} Zebra`
 const PAGINATION_SCHOOL_PREFIX = `${SCHOOL_NAME} Pagination`
 const BULK_SCHOOL_PREFIX = `${SCHOOL_NAME} Bulk`
+const IMPORT_SCHOOL_PREFIX = `${SCHOOL_NAME} Import`
+const IMPORT_TEACHER_PREFIX = `${TEACHER_NAME} Import`
+const IMPORT_PROGRAM_PREFIX = `${PROGRAM_NAME} Import`
 
 let payload: Payload
 
@@ -379,4 +382,68 @@ test('bulk-selects and removes multiple schools at once, with a single confirm d
   await page.locator('dialog.confirm-dialog').getByRole('button', { name: 'Remove' }).click()
 
   await expect(page.getByText(`No schools match "${BULK_SCHOOL_PREFIX}"`)).toBeVisible()
+})
+
+test('imports schools from a CSV file, creating valid rows and reporting per-row errors', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/schools')
+
+  await page.getByRole('button', { name: 'Import CSV' }).click()
+  const csv = [
+    'name,city',
+    `${IMPORT_SCHOOL_PREFIX} A,Rotterdam`,
+    `${IMPORT_SCHOOL_PREFIX} B,`,
+    `${DUPLICATE_SCHOOL_NAME},`,
+  ].join('\n')
+  await page.locator('input[type="file"]').setInputFiles({ name: 'schools.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) })
+  await page.getByRole('button', { name: 'Import', exact: true }).click()
+
+  await expect(page.getByText('2 created, 1 row(s) with errors.')).toBeVisible()
+  await expect(page.getByText(`Row 4: A school named "${DUPLICATE_SCHOOL_NAME}" already exists.`)).toBeVisible()
+
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByPlaceholder('Search schools…').fill(IMPORT_SCHOOL_PREFIX)
+  await expect(page.locator('table.record-table tbody tr')).toHaveCount(2)
+})
+
+test('imports teachers from a CSV file, validating the kind column', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/teachers')
+
+  await page.getByRole('button', { name: 'Import CSV' }).click()
+  const csv = [
+    'displayName,kind',
+    `${IMPORT_TEACHER_PREFIX} A,person`,
+    `${IMPORT_TEACHER_PREFIX} B,notarealkind`,
+  ].join('\n')
+  await page.locator('input[type="file"]').setInputFiles({ name: 'teachers.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) })
+  await page.getByRole('button', { name: 'Import', exact: true }).click()
+
+  await expect(page.getByText('1 created, 1 row(s) with errors.')).toBeVisible()
+  await expect(page.getByText('Row 3: Type must be "person" or "organisation".')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByPlaceholder('Search teachers…').fill(IMPORT_TEACHER_PREFIX)
+  await expect(page.locator('table.record-table tbody tr')).toHaveCount(1)
+})
+
+test('imports programs from a CSV file, validating numeric columns', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/programs')
+
+  await page.getByRole('button', { name: 'Import CSV' }).click()
+  const csv = [
+    'name,defaultLessonCount',
+    `${IMPORT_PROGRAM_PREFIX} A,8`,
+    `${IMPORT_PROGRAM_PREFIX} B,notanumber`,
+  ].join('\n')
+  await page.locator('input[type="file"]').setInputFiles({ name: 'programs.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) })
+  await page.getByRole('button', { name: 'Import', exact: true }).click()
+
+  await expect(page.getByText('1 created, 1 row(s) with errors.')).toBeVisible()
+  await expect(page.getByText('Row 3: "defaultLessonCount" must be a number.')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByPlaceholder('Search programs…').fill(IMPORT_PROGRAM_PREFIX)
+  await expect(page.locator('table.record-table tbody tr')).toHaveCount(1)
 })
