@@ -50,6 +50,14 @@ ENV NODE_ENV production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# The PDF export route (src/app/(frontend)/planning/export/route.ts) drives
+# this system Chromium via `puppeteer-core`, not puppeteer's own bundled
+# download -- that download is a glibc binary and this image is musl-based
+# Alpine, so it simply won't run here. ttf-freefont avoids missing-glyph
+# boxes in the rendered PDF for any non-Latin characters.
+RUN apk add --no-cache chromium ttf-freefont
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
 COPY --from=builder /app/public ./public
 
 # Set the correct permission for prerender cache

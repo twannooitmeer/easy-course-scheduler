@@ -26,7 +26,18 @@ describe('deleteBookingsCascade', () => {
       await payload.delete({ collection, where: { id: { exists: true } } })
     }
     const users = await payload.find({ collection: 'users', limit: 1 })
-    user = users.docs[0]
+    user =
+      users.docs[0] ??
+      (await payload.create({
+        collection: 'users',
+        data: {
+          email: 'int-delete-cascade@example.com',
+          password: 'int-delete-cascade-password-123',
+          name: 'Int Delete Cascade User',
+          role: 'admin',
+          preferredLanguage: 'en',
+        },
+      }))
   })
 
   afterAll(async () => {

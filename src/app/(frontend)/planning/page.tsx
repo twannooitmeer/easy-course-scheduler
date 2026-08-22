@@ -75,7 +75,12 @@ export default async function PlanningPage() {
           <h1>{t(locale, 'planning.title')}</h1>
           <p className="subtitle">{t(locale, 'planning.signedInAs', { name: user.name, email: user.email })}</p>
         </div>
-        <NewBookingDialog schoolOptions={schoolOptions} programOptions={programOptions} />
+        <div className="page-header-actions">
+          <a href="/planning/export" className="admin-link">
+            {t(locale, 'planning.exportPdf')}
+          </a>
+          <NewBookingDialog schoolOptions={schoolOptions} programOptions={programOptions} />
+        </div>
       </div>
       <PlanningGrid bookings={bookings} teacherOptions={teacherOptions} />
     </div>

@@ -256,3 +256,17 @@ test('bulk-selects two bookings and applies one status to both', async ({ page }
   await expect(rowAAfterReload.locator('select.cell-select')).toHaveValue('akkoord_docent')
   await expect(rowBAfterReload.locator('select.cell-select')).toHaveValue('akkoord_docent')
 })
+
+test('exports the planning grid as a PDF, and refuses when signed out', async ({ page }) => {
+  const unauthenticated = await page.request.get('/planning/export')
+  expect(unauthenticated.status()).toBe(401)
+
+  await signIn(page)
+  const response = await page.request.get('/planning/export')
+  expect(response.status()).toBe(200)
+  expect(response.headers()['content-type']).toBe('application/pdf')
+
+  const body = await response.body()
+  expect(body.byteLength).toBeGreaterThan(1000)
+  expect(body.subarray(0, 5).toString('latin1')).toBe('%PDF-')
+})
