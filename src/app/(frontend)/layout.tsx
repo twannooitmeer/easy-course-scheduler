@@ -14,6 +14,16 @@ export const metadata: Metadata = {
   description: 'Planning grid for schools, programs, and lessons.',
 }
 
+// Without this, `next build` still tries a build-time render pass for
+// every route to detect which ones need dynamic APIs — and since this
+// layout now calls the Payload Local API (auth + the site-settings
+// global) on every request, that pass fails outright with "missing
+// secret key" (PAYLOAD_SECRET is a runtime-only env var, never a build
+// arg). Every page under (frontend) already opts into this individually;
+// setting it here on the shared layout makes it the default for the
+// whole segment instead of something each new page has to remember.
+export const dynamic = 'force-dynamic'
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const payload = await getPayload({ config })
   const headersList = await getHeaders()
