@@ -128,6 +128,8 @@ const en = {
     clearFilters: 'Clear filters',
     noResultsFiltered: 'No bookings match these filters.',
     exportFilteredNotice: 'Filters applied — export includes only the {count} matching bookings.',
+    viewGrid: 'Grid',
+    viewCalendar: 'Calendar',
   },
   teacherPicker: {
     addPlaceholderEmpty: '+ Teacher',
@@ -391,6 +393,8 @@ const nl: Dictionary = {
     clearFilters: 'Filters wissen',
     noResultsFiltered: 'Geen inschrijvingen komen overeen met deze filters.',
     exportFilteredNotice: 'Filters toegepast — export bevat alleen de {count} overeenkomende inschrijvingen.',
+    viewGrid: 'Lijst',
+    viewCalendar: 'Kalender',
   },
   teacherPicker: {
     addPlaceholderEmpty: '+ Docent',

@@ -313,3 +313,22 @@ test('filters bookings by class/group and scopes the PDF export to the matching 
   const unfilteredBody = await unfiltered.body()
   expect(filteredBody.byteLength).toBeLessThan(unfilteredBody.byteLength)
 })
+
+test('switches to the calendar view, groups lessons by day, and keeps filters applied', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/planning')
+
+  await page.getByRole('button', { name: 'Calendar' }).click()
+
+  const table = page.locator('table.bookings-table')
+  await expect(table).toBeHidden()
+  const agenda = page.locator('.calendar-agenda')
+  await expect(agenda).toBeVisible()
+
+  const lessonEntry = agenda.locator('.agenda-lesson', { hasText: GROUP_LABEL })
+  await expect(lessonEntry).toHaveCount(2)
+
+  await page.getByLabel('Class/group').fill(GROUP_LABEL)
+  await expect(agenda.locator('.agenda-lesson')).toHaveCount(2)
+  await expect(agenda.locator('.agenda-lesson', { hasText: BULK_GROUP_LABEL_A })).toHaveCount(0)
+})

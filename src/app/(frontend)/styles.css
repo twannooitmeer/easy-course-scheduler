@@ -268,6 +268,96 @@ a {
   margin: 0 0 0.85rem;
 }
 
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.view-toggle button {
+  font: inherit;
+  font-size: 0.8rem;
+  border: none;
+  background: var(--surface);
+  color: var(--ink-soft);
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+}
+
+.view-toggle button + button {
+  border-left: 1px solid var(--line);
+}
+
+.view-toggle button.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.calendar-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.agenda-day-heading {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: capitalize;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.agenda-day-lessons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.agenda-lesson {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+}
+
+.agenda-lesson-time {
+  flex-shrink: 0;
+  width: 5.5rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.agenda-lesson-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.agenda-lesson-title {
+  font-weight: 500;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.agenda-lesson-meta {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  margin-top: 0.1rem;
+}
+
 .list-toolbar {
   display: flex;
   align-items: center;
@@ -1223,5 +1313,18 @@ dialog.teacher-picker-dialog h2 {
   .filter-bar select,
   .filter-bar input {
     flex: 1 1 45%;
+  }
+
+  .agenda-lesson {
+    flex-wrap: wrap;
+  }
+
+  .agenda-lesson-time {
+    width: auto;
+  }
+
+  .agenda-lesson-main {
+    flex-basis: 100%;
+    order: 3;
   }
 }
