@@ -51,6 +51,35 @@ export async function updateBooking(id: number, data: BookingUpdateInput) {
   revalidatePath('/planning')
 }
 
+export type BulkActionResult = { success: true } | { success: false; error: string }
+
+/**
+ * Applies one status to every listed Booking in a single update — the
+ * planning grid's bulk-select counterpart to editing one booking's
+ * status at a time via its own row.
+ */
+export async function bulkUpdateBookingStatus(
+  ids: number[],
+  status: Booking['status'],
+): Promise<BulkActionResult> {
+  const { payload, user } = await requireUser()
+
+  try {
+    await payload.update({
+      collection: 'bookings',
+      where: { id: { in: ids } },
+      data: { status },
+      user,
+      overrideAccess: false,
+    })
+    revalidatePath('/planning')
+    return { success: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Could not update booking status'
+    return { success: false, error: message }
+  }
+}
+
 export type BookingCreateInput = {
   school: number
   program: number

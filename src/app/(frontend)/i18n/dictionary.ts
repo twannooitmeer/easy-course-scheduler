@@ -80,6 +80,9 @@ const en = {
     emptyTitle: 'No bookings yet.',
     emptyHint: 'Use the + New booking button above to book a school onto a program and see its generated lessons here.',
     removeBooking: 'Remove booking',
+    applyStatus: 'Apply status',
+    applyingStatus: 'Applying…',
+    confirmBulkStatus: 'Set status to "{status}" for {count} bookings?',
     confirmRemoveBooking: 'Remove this booking and all of its lessons? This cannot be undone.',
     newBookingDialogTitle: 'New booking',
     newBookingDialogSubtitle:
@@ -325,6 +328,9 @@ const nl: Dictionary = {
     emptyHint:
       'Gebruik de knop + Nieuwe inschrijving hierboven om een school aan een programma te koppelen en de gegenereerde lessen hier te zien.',
     removeBooking: 'Inschrijving verwijderen',
+    applyStatus: 'Status toepassen',
+    applyingStatus: 'Toepassen…',
+    confirmBulkStatus: 'Status instellen op "{status}" voor {count} inschrijvingen?',
     confirmRemoveBooking: 'Deze inschrijving en alle bijbehorende lessen verwijderen? Dit kan niet ongedaan worden gemaakt.',
     newBookingDialogTitle: 'Nieuwe inschrijving',
     newBookingDialogSubtitle:

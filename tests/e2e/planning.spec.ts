@@ -10,6 +10,8 @@ const SCHOOL_NAME = 'E2E Test School'
 const PROGRAM_NAME = 'E2E Test Program'
 const TEACHER_NAME = 'E2E Test Teacher'
 const GROUP_LABEL = 'e2e-group'
+const BULK_GROUP_LABEL_A = 'e2e-bulk-a'
+const BULK_GROUP_LABEL_B = 'e2e-bulk-b'
 
 let payload: Payload
 
@@ -106,6 +108,27 @@ test.beforeAll(async () => {
       status: 'nieuw',
     },
   })
+
+  await payload.create({
+    collection: 'bookings',
+    data: {
+      school: school.id,
+      program: program.id,
+      groupLabel: BULK_GROUP_LABEL_A,
+      startDate: '2027-02-01T00:00:00.000Z',
+      status: 'nieuw',
+    },
+  })
+  await payload.create({
+    collection: 'bookings',
+    data: {
+      school: school.id,
+      program: program.id,
+      groupLabel: BULK_GROUP_LABEL_B,
+      startDate: '2027-02-02T00:00:00.000Z',
+      status: 'nieuw',
+    },
+  })
 })
 
 test.afterAll(async () => {
@@ -156,7 +179,7 @@ test('creates a booking from the planning grid itself, without going through /ad
   await expect(createdRow).toBeVisible()
   // The fixture program has 2 lesson templates -- generation should have
   // fired the same as it does for a booking created via /admin.
-  await expect(createdRow.locator('td').nth(6)).toHaveText('2')
+  await expect(createdRow.locator('.lesson-count')).toHaveText('2')
 })
 
 test('signs in, expands a booking, edits a lesson, and the edit persists on reload', async ({ page }) => {
@@ -167,7 +190,7 @@ test('signs in, expands a booking, edits a lesson, and the edit persists on relo
 
   const bookingRow = page.locator('tr.booking-row', { hasText: GROUP_LABEL })
   await expect(bookingRow).toBeVisible()
-  await expect(bookingRow.locator('td').nth(6)).toHaveText('2')
+  await expect(bookingRow.locator('.lesson-count')).toHaveText('2')
 
   await bookingRow.click()
 
@@ -193,4 +216,43 @@ test('signs in, expands a booking, edits a lesson, and the edit persists on relo
   await expect(lessonRowsAfterReload.nth(0).locator('input[type="text"]').first()).toHaveValue(
     'e2e-gymlokaal',
   )
+})
+
+test('bulk-selects two bookings and applies one status to both', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/planning')
+
+  const rowA = page.locator('tr.booking-row', { hasText: BULK_GROUP_LABEL_A })
+  const rowB = page.locator('tr.booking-row', { hasText: BULK_GROUP_LABEL_B })
+  await expect(rowA).toBeVisible()
+  await expect(rowB).toBeVisible()
+
+  await rowA.locator('td.checkbox-column input[type="checkbox"]').click()
+  await rowB.locator('td.checkbox-column input[type="checkbox"]').click()
+
+  const bulkBar = page.locator('.bulk-actions-bar')
+  await expect(bulkBar).toBeVisible()
+  await expect(bulkBar).toContainText('2 selected')
+
+  await bulkBar.locator('select.bulk-status-select').selectOption({ label: 'Akkoord docent' })
+  await bulkBar.getByRole('button', { name: 'Apply status' }).click()
+
+  const dialog = page.locator('dialog.confirm-dialog')
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toContainText('Set status to "Akkoord docent" for 2 bookings?')
+
+  await Promise.all([
+    page.waitForResponse((res) => res.url().includes('/planning') && res.request().method() === 'POST'),
+    dialog.getByRole('button', { name: 'Apply status' }).click(),
+  ])
+
+  await expect(bulkBar).toBeHidden()
+  await expect(rowA.locator('select.cell-select')).toHaveValue('akkoord_docent')
+  await expect(rowB.locator('select.cell-select')).toHaveValue('akkoord_docent')
+
+  await page.reload()
+  const rowAAfterReload = page.locator('tr.booking-row', { hasText: BULK_GROUP_LABEL_A })
+  const rowBAfterReload = page.locator('tr.booking-row', { hasText: BULK_GROUP_LABEL_B })
+  await expect(rowAAfterReload.locator('select.cell-select')).toHaveValue('akkoord_docent')
+  await expect(rowBAfterReload.locator('select.cell-select')).toHaveValue('akkoord_docent')
 })

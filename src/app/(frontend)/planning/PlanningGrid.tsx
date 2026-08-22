@@ -12,7 +12,8 @@ import { Fragment, useRef, useState, useTransition } from 'react'
 
 import { ConfirmDialog, type ConfirmDialogHandle } from '../ConfirmDialog'
 import { useLocale } from '../i18n/LocaleProvider'
-import { deleteBooking, updateBooking } from './actions'
+import { useResetState } from '../useResetState'
+import { bulkUpdateBookingStatus, deleteBooking, updateBooking } from './actions'
 import { fromDateInputValue, toDateInputValue } from './dateHelpers'
 import { LessonsPanel } from './LessonsPanel'
 import { STATUS_OPTIONS, type BookingWithLessons, type TeacherOption } from './types'
@@ -83,6 +84,9 @@ export function PlanningGrid({
   const { t } = useLocale()
   const [expanded, setExpanded] = useState<ExpandedState>({})
   const [error, setError] = useState<string | null>(null)
+  const [selected, setSelected] = useResetState<Set<number>>(bookings, () => new Set())
+  const [bulkStatus, setBulkStatus] = useState<BookingWithLessons['status']>('nieuw')
+  const [isBulkPending, setIsBulkPending] = useState(false)
   const confirmRef = useRef<ConfirmDialogHandle>(null)
 
   async function handleRequestDeleteBooking(id: number, e: React.MouseEvent) {
@@ -95,7 +99,60 @@ export function PlanningGrid({
     if (!result.success) setError(result.error)
   }
 
+  function toggleOne(id: number, e: React.MouseEvent | React.ChangeEvent) {
+    e.stopPropagation()
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleAll() {
+    setSelected((prev) => (prev.size === bookings.length ? new Set() : new Set(bookings.map((b) => b.id))))
+  }
+
+  async function handleApplyBulkStatus() {
+    const statusLabel = STATUS_OPTIONS.find((opt) => opt.value === bulkStatus)?.label ?? bulkStatus
+    const ok = await confirmRef.current?.confirm(
+      t('planning.confirmBulkStatus', { status: statusLabel, count: selected.size }),
+      { confirmLabel: t('planning.applyStatus'), destructive: false },
+    )
+    if (!ok) return
+
+    setError(null)
+    setIsBulkPending(true)
+    const result = await bulkUpdateBookingStatus([...selected], bulkStatus)
+    setIsBulkPending(false)
+    if (result.success) {
+      setSelected(new Set())
+    } else {
+      setError(result.error)
+    }
+  }
+
   const columns = [
+    columnHelper.display({
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          checked={selected.size === bookings.length && bookings.length > 0}
+          onChange={toggleAll}
+          aria-label={t('common.selectAll')}
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          checked={selected.has(row.original.id)}
+          onChange={(e) => toggleOne(row.original.id, e)}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+      size: 24,
+    }),
     columnHelper.display({
       id: 'expander',
       header: '',
@@ -171,13 +228,32 @@ export function PlanningGrid({
   return (
     <div className="grid-card">
       {error && <p className="error-banner">{error}</p>}
+      {selected.size > 0 && (
+        <div className="bulk-actions-bar bulk-actions-bar-standalone">
+          <span>{t('common.selectedCount', { count: selected.size })}</span>
+          <select
+            className="bulk-status-select"
+            value={bulkStatus}
+            onChange={(e) => setBulkStatus(e.target.value as BookingWithLessons['status'])}
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <button type="button" className="primary" onClick={handleApplyBulkStatus} disabled={isBulkPending}>
+            {isBulkPending ? t('planning.applyingStatus') : t('planning.applyStatus')}
+          </button>
+        </div>
+      )}
       <div className="grid-scroll">
         <table className="bookings-table">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id}>
+                  <th key={header.id} className={header.column.id === 'select' ? 'checkbox-column' : undefined}>
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -194,7 +270,9 @@ export function PlanningGrid({
                   onClick={() => row.toggleExpanded()}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                    <td key={cell.id} className={cell.column.id === 'select' ? 'checkbox-column' : undefined}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
                   ))}
                 </tr>
                 {row.getIsExpanded() && (

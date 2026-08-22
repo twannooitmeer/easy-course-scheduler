@@ -295,8 +295,40 @@ a {
 }
 
 table.record-table th.checkbox-column,
-table.record-table td.checkbox-column {
+table.record-table td.checkbox-column,
+table.bookings-table th.checkbox-column,
+table.bookings-table td.checkbox-column {
   width: 2rem;
+}
+
+.bulk-actions-bar-standalone {
+  margin-bottom: 0.6rem;
+}
+
+.bulk-status-select {
+  font: inherit;
+  font-size: 0.8rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+}
+
+.bulk-actions-bar button.primary {
+  font: inherit;
+  font-size: 0.78rem;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.bulk-actions-bar button.primary:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .search-input {
