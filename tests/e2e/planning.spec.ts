@@ -282,4 +282,11 @@ test('shows a read-only card list on mobile instead of the editable grid', async
   await expect(bookingCard).toBeVisible()
   await expect(bookingCard.locator('.booking-card-header .status-pill')).toHaveText('Nieuw')
   await expect(bookingRow).toBeHidden()
+
+  // Collapsed by default, matching the desktop grid's own collapsed rows --
+  // only the booking-level summary shows until it's tapped open.
+  await expect(bookingCard.locator('.booking-card-lessons')).toBeHidden()
+  await bookingCard.locator('.booking-card-header').click()
+  await expect(bookingCard.locator('.booking-card-lessons')).toBeVisible()
+  await expect(bookingCard.locator('.booking-card-lessons li')).toHaveCount(2)
 })
