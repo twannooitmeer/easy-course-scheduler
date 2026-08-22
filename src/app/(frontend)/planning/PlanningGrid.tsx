@@ -8,9 +8,10 @@ import {
   useReactTable,
   type ExpandedState,
 } from '@tanstack/react-table'
-import { Fragment, useState, useTransition } from 'react'
+import { Fragment, useRef, useState, useTransition } from 'react'
 
-import { updateBooking } from './actions'
+import { ConfirmDialog, type ConfirmDialogHandle } from '../ConfirmDialog'
+import { deleteBooking, updateBooking } from './actions'
 import { fromDateInputValue, toDateInputValue } from './dateHelpers'
 import { LessonsPanel } from './LessonsPanel'
 import { STATUS_OPTIONS, type BookingWithLessons, type TeacherOption } from './types'
@@ -79,6 +80,20 @@ export function PlanningGrid({
   teacherOptions: TeacherOption[]
 }) {
   const [expanded, setExpanded] = useState<ExpandedState>({})
+  const [error, setError] = useState<string | null>(null)
+  const confirmRef = useRef<ConfirmDialogHandle>(null)
+
+  async function handleRequestDeleteBooking(id: number, e: React.MouseEvent) {
+    e.stopPropagation()
+    const ok = await confirmRef.current?.confirm(
+      'Remove this booking and all of its lessons? This cannot be undone.',
+    )
+    if (!ok) return
+
+    setError(null)
+    const result = await deleteBooking(id)
+    if (!result.success) setError(result.error)
+  }
 
   const columns = [
     columnHelper.display({
@@ -116,6 +131,19 @@ export function PlanningGrid({
       header: 'Lessons',
       cell: (info) => <span className="lesson-count">{info.getValue()}</span>,
     }),
+    columnHelper.display({
+      id: 'remove',
+      header: '',
+      cell: ({ row }) => (
+        <button
+          type="button"
+          className="icon-button"
+          onClick={(e) => handleRequestDeleteBooking(row.original.id, e)}
+        >
+          Remove
+        </button>
+      ),
+    }),
   ]
 
   const table = useReactTable({
@@ -140,6 +168,7 @@ export function PlanningGrid({
 
   return (
     <div className="grid-card">
+      {error && <p className="error-banner">{error}</p>}
       <div className="grid-scroll">
         <table className="bookings-table">
           <thead>
@@ -169,7 +198,11 @@ export function PlanningGrid({
                 {row.getIsExpanded() && (
                   <tr className="lessons-row">
                     <td colSpan={row.getVisibleCells().length}>
-                      <LessonsPanel lessons={row.original.lessons} teacherOptions={teacherOptions} />
+                      <LessonsPanel
+                        bookingId={row.original.id}
+                        lessons={row.original.lessons}
+                        teacherOptions={teacherOptions}
+                      />
                     </td>
                   </tr>
                 )}
@@ -178,6 +211,7 @@ export function PlanningGrid({
           </tbody>
         </table>
       </div>
+      <ConfirmDialog ref={confirmRef} />
     </div>
   )
 }

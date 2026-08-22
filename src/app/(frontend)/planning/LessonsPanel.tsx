@@ -1,18 +1,21 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 
 import type { Lesson } from '@/payload-types'
-import { updateLesson, type LessonUpdateInput } from './actions'
+import { ConfirmDialog, type ConfirmDialogHandle } from '../ConfirmDialog'
+import { createLesson, deleteLesson, updateLesson, type LessonUpdateInput } from './actions'
 import { fromDateInputValue, fromTimeInputValue, toDateInputValue, toTimeInputValue } from './dateHelpers'
 import { STATUS_OPTIONS, type TeacherOption } from './types'
 
 function LessonRow({
   lesson,
   teacherOptions,
+  onRequestDelete,
 }: {
   lesson: Lesson
   teacherOptions: TeacherOption[]
+  onRequestDelete: (id: number) => void
 }) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -139,50 +142,90 @@ function LessonRow({
         {isPending && <span className="saving-dot" title="Saving…" />}
         {error && <span style={{ color: '#b91c1c', fontSize: '0.72rem' }}>{error}</span>}
       </td>
+      <td>
+        <button type="button" className="icon-button" onClick={() => onRequestDelete(lesson.id)}>
+          Remove
+        </button>
+      </td>
     </tr>
   )
 }
 
 export function LessonsPanel({
+  bookingId,
   lessons,
   teacherOptions,
 }: {
+  bookingId: number
   lessons: Lesson[]
   teacherOptions: TeacherOption[]
 }) {
-  if (lessons.length === 0) {
-    return (
-      <div className="lessons-panel">
-        <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem', margin: 0 }}>
-          No lessons generated for this booking — the program may have no lesson templates yet.
-        </p>
-      </div>
+  const confirmRef = useRef<ConfirmDialogHandle>(null)
+  const [isAdding, startAddTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleRequestDelete(lessonId: number) {
+    const ok = await confirmRef.current?.confirm(
+      'Remove this lesson? This cannot be undone.',
     )
+    if (!ok) return
+
+    setError(null)
+    const result = await deleteLesson(lessonId)
+    if (!result.success) setError(result.error)
+  }
+
+  function handleAddLesson() {
+    setError(null)
+    startAddTransition(async () => {
+      const result = await createLesson(bookingId)
+      if (!result.success) setError(result.error)
+    })
   }
 
   return (
     <div className="lessons-panel">
-      <table className="lessons-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Date</th>
-            <th>Start</th>
-            <th>End</th>
-            <th>Teachers</th>
-            <th>Location</th>
-            <th>Students</th>
-            <th>Status</th>
-            <th>Remark</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {lessons.map((lesson) => (
-            <LessonRow key={lesson.id} lesson={lesson} teacherOptions={teacherOptions} />
-          ))}
-        </tbody>
-      </table>
+      {error && <p className="error-banner">{error}</p>}
+
+      {lessons.length === 0 ? (
+        <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>
+          No lessons generated for this booking — the program may have no lesson templates yet.
+        </p>
+      ) : (
+        <table className="lessons-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Teachers</th>
+              <th>Location</th>
+              <th>Students</th>
+              <th>Status</th>
+              <th>Remark</th>
+              <th></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {lessons.map((lesson) => (
+              <LessonRow
+                key={lesson.id}
+                lesson={lesson}
+                teacherOptions={teacherOptions}
+                onRequestDelete={handleRequestDelete}
+              />
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <button type="button" className="icon-button add-lesson-button" onClick={handleAddLesson} disabled={isAdding}>
+        {isAdding ? 'Adding…' : '+ Add lesson'}
+      </button>
+
+      <ConfirmDialog ref={confirmRef} />
     </div>
   )
 }

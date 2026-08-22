@@ -1,27 +1,9 @@
 'use server'
 
-import { headers as getHeaders } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { getPayload } from 'payload'
 
-import config from '@/payload.config'
 import type { Booking, Lesson } from '@/payload-types'
-
-/**
- * Every action re-checks auth itself and passes `overrideAccess: false` with
- * the resolved user — Payload's Local API bypasses collection access control
- * by default, so skipping this would let an unauthenticated request through
- * regardless of the page-level redirect in page.tsx.
- */
-async function requireUser() {
-  const payload = await getPayload({ config })
-  const headersList = await getHeaders()
-  const { user } = await payload.auth({ headers: headersList })
-  if (!user) {
-    throw new Error('Not authenticated')
-  }
-  return { payload, user }
-}
+import { requireUser } from '../requireUser'
 
 export type LessonUpdateInput = Partial<
   Pick<
@@ -76,16 +58,14 @@ export type BookingCreateInput = {
   startDate: string
 }
 
-export type CreateBookingResult = { success: true; id: number } | { success: false; error: string }
+export type CreateResult = { success: true; id: number } | { success: false; error: string }
+export type ActionResult = { success: true } | { success: false; error: string }
 
 /**
  * Booking a school onto a program is the trigger for lesson generation
- * (see src/hooks/generateLessonsFromBooking.ts) — this is the one create
- * path the planning UI needs, since everything else (schools, teachers,
- * programs, lesson templates) is genuinely admin/config work, not a
- * regular user's daily task the way booking a program onto a school is.
+ * (see src/hooks/generateLessonsFromBooking.ts).
  */
-export async function createBooking(input: BookingCreateInput): Promise<CreateBookingResult> {
+export async function createBooking(input: BookingCreateInput): Promise<CreateResult> {
   const { payload, user } = await requireUser()
 
   try {
@@ -106,6 +86,97 @@ export async function createBooking(input: BookingCreateInput): Promise<CreateBo
     return { success: true, id: Number(booking.id) }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Could not create booking'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * A lesson added directly from the grid (not generated from a template) —
+ * e.g. a makeup lesson a booking's program didn't originally call for.
+ * Starts mostly blank; sequenceNo continues after whatever's already there
+ * so it sorts to the end, and every other field is edited inline afterward
+ * through the same cells an auto-generated lesson uses.
+ */
+export async function createLesson(bookingId: number): Promise<CreateResult> {
+  const { payload, user } = await requireUser()
+
+  try {
+    const existing = await payload.find({
+      collection: 'lessons',
+      where: { booking: { equals: bookingId } },
+      sort: '-sequenceNo',
+      limit: 1,
+      depth: 0,
+    })
+    const nextSequenceNo = (existing.docs[0]?.sequenceNo ?? 0) + 1
+
+    const lesson = await payload.create({
+      collection: 'lessons',
+      data: {
+        booking: bookingId,
+        sequenceNo: nextSequenceNo,
+        lessonDate: new Date().toISOString(),
+        status: 'nieuw',
+      },
+      user,
+      overrideAccess: false,
+    })
+
+    revalidatePath('/planning')
+    return { success: true, id: Number(lesson.id) }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Could not add lesson'
+    return { success: false, error: message }
+  }
+}
+
+export async function deleteLesson(id: number): Promise<ActionResult> {
+  const { payload, user } = await requireUser()
+
+  try {
+    await payload.delete({
+      collection: 'lessons',
+      id,
+      user,
+      overrideAccess: false,
+    })
+
+    revalidatePath('/planning')
+    return { success: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Could not remove lesson'
+    return { success: false, error: message }
+  }
+}
+
+/**
+ * Deletes the booking and every lesson generated under it -- there's no DB
+ * cascade set up (see the collections' own comments on why relationships
+ * stay simple for this data volume), so the lessons are deleted explicitly
+ * first, in the same order the vitest fixtures already clean up after
+ * themselves.
+ */
+export async function deleteBooking(id: number): Promise<ActionResult> {
+  const { payload, user } = await requireUser()
+
+  try {
+    await payload.delete({
+      collection: 'lessons',
+      where: { booking: { equals: id } },
+      user,
+      overrideAccess: false,
+    })
+    await payload.delete({
+      collection: 'bookings',
+      id,
+      user,
+      overrideAccess: false,
+    })
+
+    revalidatePath('/planning')
+    return { success: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Could not remove booking'
     return { success: false, error: message }
   }
 }

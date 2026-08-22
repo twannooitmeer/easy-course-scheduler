@@ -34,6 +34,64 @@ a {
   color: var(--accent);
 }
 
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-nav {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  padding: 1.25rem 1rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.app-nav-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.01em;
+}
+
+.app-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.app-nav a {
+  display: block;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.app-nav a:hover {
+  background: var(--paper);
+}
+
+.app-nav a.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.app-content {
+  flex: 1;
+  min-width: 0;
+}
+
 .page {
   max-width: 1400px;
   margin: 0 auto;
@@ -158,9 +216,32 @@ dialog.new-booking-dialog input {
   color: white;
 }
 
+.dialog-actions button.danger {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: white;
+}
+
 .dialog-actions button:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+dialog.confirm-dialog {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  width: min(360px, 90vw);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+dialog.confirm-dialog::backdrop {
+  background: rgba(15, 18, 24, 0.35);
+}
+
+dialog.confirm-dialog p {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
 }
 
 .empty-state {
@@ -278,6 +359,10 @@ table.bookings-table thead th {
   background: var(--paper);
 }
 
+.add-lesson-button {
+  margin-top: 0.6rem;
+}
+
 table.lessons-table {
   width: 100%;
   border-collapse: collapse;
@@ -367,4 +452,196 @@ select.cell-select[multiple] {
   border-radius: 6px;
   font-size: 0.8rem;
   margin-bottom: 0.6rem;
+}
+
+/* Generic record list tables (Schools, Teachers, Programs) */
+
+table.record-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.record-table thead th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+
+table.record-table tbody tr {
+  cursor: pointer;
+}
+
+table.record-table tbody tr:hover {
+  background: var(--accent-soft);
+}
+
+table.record-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+table.record-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
+/* Detail-page record forms (School / Teacher / Program edit) */
+
+.record-form {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem 1.25rem;
+  max-width: 720px;
+}
+
+.record-form .field-full {
+  grid-column: 1 / -1;
+}
+
+.record-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.record-form select,
+.record-form input,
+.record-form textarea {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+}
+
+.record-form textarea {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+.checkbox-row {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox-row input {
+  width: auto;
+}
+
+.form-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.form-footer button.primary {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+}
+
+.form-footer button.primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.saved-hint {
+  color: var(--status-akkoord-docent);
+  font-size: 0.8rem;
+}
+
+/* Nested sub-sections (Contacts under a School, Lesson Templates under a Program) */
+
+.sub-section {
+  max-width: 720px;
+  margin-top: 2rem;
+}
+
+.sub-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.sub-section-header h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+table.sub-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+table.sub-table thead th {
+  text-align: left;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+}
+
+table.sub-table td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+table.sub-table tr:last-child td {
+  border-bottom: none;
+}
+
+.icon-button {
+  font: inherit;
+  font-size: 0.78rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+
+.icon-button:hover {
+  border-color: #fca5a5;
+  color: #b91c1c;
 }
