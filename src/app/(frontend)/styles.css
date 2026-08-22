@@ -981,3 +981,93 @@ dialog.teacher-picker-dialog h2 {
   max-height: 260px;
   overflow-y: auto;
 }
+
+/*
+ * Mobile/narrow-viewport layout. The two dense tables (planning grid,
+ * record lists) deliberately keep their existing .grid-scroll
+ * horizontal-scroll behavior here rather than reflowing into cards --
+ * that's the standard, correct pattern for this kind of data-grid at
+ * phone widths, and a card-based redesign of the whole grid is a much
+ * bigger job than this pass warrants. Everything below is the layout
+ * that actually breaks at narrow widths: the always-visible sidebar
+ * (eats over half a phone screen even "collapsed"), the two-column
+ * record forms, and toolbars that assume desktop-width horizontal room.
+ */
+@media (max-width: 768px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  /*
+   * On desktop, .collapsed shrinks the sidebar to a 56px icon rail --
+   * still useful there since it stays a persistent sidebar either way.
+   * On mobile there's no room for a persistent sidebar at all, so the
+   * nav becomes a slim sticky top bar instead: the header row (toggle +
+   * org name/logo) always shows, and the link list + footer are the
+   * part that collapses, entirely (not just narrows), to give the page
+   * below it the full viewport back.
+   */
+  .app-nav,
+  .app-nav.collapsed {
+    width: 100%;
+    height: auto;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: 0.65rem 1rem;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .app-nav-header {
+    margin-bottom: 0;
+  }
+
+  .app-nav ul,
+  .app-nav-footer {
+    margin-top: 0.75rem;
+  }
+
+  .app-nav.collapsed ul,
+  .app-nav.collapsed .app-nav-footer {
+    display: none;
+  }
+
+  .app-nav-footer {
+    margin-top: 0.75rem;
+    padding-top: 0.6rem;
+  }
+
+  .app-nav-footer-row {
+    flex-direction: row;
+    gap: 0.75rem;
+  }
+
+  .app-nav-icon-link {
+    width: auto;
+  }
+
+  .page {
+    padding: 1.1rem 1rem 3rem;
+  }
+
+  .page-header,
+  .list-toolbar,
+  .pagination {
+    flex-wrap: wrap;
+  }
+
+  .search-input {
+    max-width: 100%;
+  }
+
+  .record-form {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    padding: 1.1rem;
+  }
+
+  .sub-section {
+    max-width: 100%;
+  }
+}
