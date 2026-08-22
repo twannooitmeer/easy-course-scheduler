@@ -9,6 +9,16 @@ export type TeacherOption = {
   displayName: string
 }
 
+export type SchoolOption = {
+  id: number
+  name: string
+}
+
+export type ProgramOption = {
+  id: number
+  name: string
+}
+
 export type LessonStatus = Lesson['status']
 
 export const STATUS_OPTIONS: { value: LessonStatus; label: string }[] = [

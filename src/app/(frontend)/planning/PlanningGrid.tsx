@@ -8,7 +8,6 @@ import {
   useReactTable,
   type ExpandedState,
 } from '@tanstack/react-table'
-import Link from 'next/link'
 import { Fragment, useState, useTransition } from 'react'
 
 import { updateBooking } from './actions'
@@ -134,10 +133,7 @@ export function PlanningGrid({
     return (
       <div className="empty-state">
         <p>No bookings yet.</p>
-        <p>
-          Create one via <Link href="/admin/collections/bookings/create">+ New booking</Link> to see its
-          generated lessons here.
-        </p>
+        <p>Use the + New booking button above to book a school onto a program and see its generated lessons here.</p>
       </div>
     )
   }

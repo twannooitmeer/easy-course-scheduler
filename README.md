@@ -50,10 +50,14 @@ re-check auth and pass `overrideAccess: false` — the Local API bypasses
 collection access control by default, so skipping that would let an
 unauthenticated request through regardless of the page-level redirect.
 
-Creating a new Booking still goes through `/admin/collections/bookings/create`
-(linked from the page) rather than being reimplemented here — Payload's
-generated form for that is already correct, and it's what triggers lesson
-generation either way.
+Creating a new Booking is a dialog on this same page (`NewBookingDialog.tsx`,
+a native `<dialog>`), not a trip to `/admin` — booking a school onto a
+program is central, frequent work for a regular user, unlike the genuinely
+one-time setup (schools, teachers, programs, lesson templates) that stays
+in the admin panel. The dialog only needs School, Program, an optional
+group label, and a start date; it creates the Booking through the same
+Server Action path as everything else on this page, which triggers lesson
+generation exactly the way creating one via `/admin` always did.
 
 ## Language
 

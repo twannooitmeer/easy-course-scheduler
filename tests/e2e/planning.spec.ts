@@ -106,12 +106,7 @@ test.afterAll(async () => {
   await payload.destroy()
 })
 
-test('redirects to login when not authenticated', async ({ page }) => {
-  await page.goto('/planning')
-  await expect(page).toHaveURL(/\/admin\/login/)
-})
-
-test('signs in, expands a booking, edits a lesson, and the edit persists on reload', async ({ page }) => {
+async function signIn(page: import('@playwright/test').Page) {
   await page.goto('/admin/login')
   await page.getByLabel('Email').fill(TEST_USER_EMAIL)
   await page.getByLabel('Password').fill(TEST_USER_PASSWORD)
@@ -123,6 +118,43 @@ test('signs in, expands a booking, edits a lesson, and the edit persists on relo
     page.getByRole('button', { name: /login/i }).click(),
   ])
   await page.waitForURL(/\/admin(?!\/login)/)
+}
+
+test('redirects to login when not authenticated', async ({ page }) => {
+  await page.goto('/planning')
+  await expect(page).toHaveURL(/\/admin\/login/)
+})
+
+test('creates a booking from the planning grid itself, without going through /admin', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/planning')
+
+  const newGroupLabel = `e2e-created-${Date.now()}`
+
+  await page.getByRole('button', { name: '+ New booking' }).click()
+  const dialog = page.locator('dialog.new-booking-dialog')
+  await expect(dialog).toBeVisible()
+
+  await dialog.getByLabel('School').selectOption({ label: SCHOOL_NAME })
+  await dialog.getByLabel('Program').selectOption({ label: PROGRAM_NAME })
+  await dialog.getByLabel('Group (optional)').fill(newGroupLabel)
+  await dialog.locator('input[type="date"]').fill('2027-06-01')
+
+  await Promise.all([
+    page.waitForResponse((res) => res.url().includes('/planning') && res.request().method() === 'POST'),
+    dialog.getByRole('button', { name: 'Create booking' }).click(),
+  ])
+
+  await expect(dialog).toBeHidden()
+  const createdRow = page.locator('tr.booking-row', { hasText: newGroupLabel })
+  await expect(createdRow).toBeVisible()
+  // The fixture program has 2 lesson templates -- generation should have
+  // fired the same as it does for a booking created via /admin.
+  await expect(createdRow.locator('td').nth(6)).toHaveText('2')
+})
+
+test('signs in, expands a booking, edits a lesson, and the edit persists on reload', async ({ page }) => {
+  await signIn(page)
 
   await page.goto('/planning')
   await expect(page).toHaveURL(/\/planning/)

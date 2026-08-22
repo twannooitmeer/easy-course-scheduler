@@ -1,10 +1,10 @@
 import { headers as getHeaders } from 'next/headers'
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
 import { groupLessonsByBooking } from './groupLessons'
+import { NewBookingDialog } from './NewBookingDialog'
 import { PlanningGrid } from './PlanningGrid'
 
 export const dynamic = 'force-dynamic'
@@ -18,7 +18,7 @@ export default async function PlanningPage() {
     redirect('/admin/login?redirect=%2Fplanning')
   }
 
-  const [bookingsResult, lessonsResult, teachersResult] = await Promise.all([
+  const [bookingsResult, lessonsResult, teachersResult, schoolsResult, programsResult] = await Promise.all([
     payload.find({
       collection: 'bookings',
       depth: 1,
@@ -38,6 +38,19 @@ export default async function PlanningPage() {
       limit: 500,
       where: { active: { equals: true } },
     }),
+    payload.find({
+      collection: 'schools',
+      depth: 0,
+      sort: 'name',
+      limit: 500,
+    }),
+    payload.find({
+      collection: 'programs',
+      depth: 0,
+      sort: 'name',
+      limit: 500,
+      where: { active: { equals: true } },
+    }),
   ])
 
   const bookings = groupLessonsByBooking(bookingsResult.docs, lessonsResult.docs)
@@ -45,6 +58,11 @@ export default async function PlanningPage() {
   const teacherOptions = teachersResult.docs.map((teacher) => ({
     id: Number(teacher.id),
     displayName: teacher.displayName,
+  }))
+  const schoolOptions = schoolsResult.docs.map((school) => ({ id: Number(school.id), name: school.name }))
+  const programOptions = programsResult.docs.map((program) => ({
+    id: Number(program.id),
+    name: program.name,
   }))
 
   return (
@@ -56,9 +74,7 @@ export default async function PlanningPage() {
             Signed in as {user.name} ({user.email})
           </p>
         </div>
-        <Link className="admin-link" href="/admin/collections/bookings/create">
-          + New booking
-        </Link>
+        <NewBookingDialog schoolOptions={schoolOptions} programOptions={programOptions} />
       </div>
       <PlanningGrid bookings={bookings} teacherOptions={teacherOptions} />
     </div>

@@ -68,3 +68,44 @@ export async function updateBooking(id: number, data: BookingUpdateInput) {
 
   revalidatePath('/planning')
 }
+
+export type BookingCreateInput = {
+  school: number
+  program: number
+  groupLabel?: string
+  startDate: string
+}
+
+export type CreateBookingResult = { success: true; id: number } | { success: false; error: string }
+
+/**
+ * Booking a school onto a program is the trigger for lesson generation
+ * (see src/hooks/generateLessonsFromBooking.ts) — this is the one create
+ * path the planning UI needs, since everything else (schools, teachers,
+ * programs, lesson templates) is genuinely admin/config work, not a
+ * regular user's daily task the way booking a program onto a school is.
+ */
+export async function createBooking(input: BookingCreateInput): Promise<CreateBookingResult> {
+  const { payload, user } = await requireUser()
+
+  try {
+    const booking = await payload.create({
+      collection: 'bookings',
+      data: {
+        school: input.school,
+        program: input.program,
+        groupLabel: input.groupLabel || undefined,
+        startDate: input.startDate,
+        status: 'nieuw',
+      },
+      user,
+      overrideAccess: false,
+    })
+
+    revalidatePath('/planning')
+    return { success: true, id: Number(booking.id) }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Could not create booking'
+    return { success: false, error: message }
+  }
+}
