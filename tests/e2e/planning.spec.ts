@@ -270,3 +270,16 @@ test('exports the planning grid as a PDF, and refuses when signed out', async ({
   expect(body.byteLength).toBeGreaterThan(1000)
   expect(body.subarray(0, 5).toString('latin1')).toBe('%PDF-')
 })
+
+test('shows a read-only card list on mobile instead of the editable grid', async ({ page }) => {
+  await signIn(page)
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/planning')
+
+  const bookingRow = page.locator('tr.booking-row', { hasText: GROUP_LABEL })
+  const bookingCard = page.locator('.booking-card', { hasText: GROUP_LABEL })
+
+  await expect(bookingCard).toBeVisible()
+  await expect(bookingCard.locator('.booking-card-header .status-pill')).toHaveText('Nieuw')
+  await expect(bookingRow).toBeHidden()
+})

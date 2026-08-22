@@ -8,6 +8,7 @@ import { t } from '../i18n/t'
 import { groupLessonsByBooking } from './groupLessons'
 import { NewBookingDialog } from './NewBookingDialog'
 import { PlanningGrid } from './PlanningGrid'
+import { PlanningMobileList } from './PlanningMobileList'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,7 +83,10 @@ export default async function PlanningPage() {
           <NewBookingDialog schoolOptions={schoolOptions} programOptions={programOptions} />
         </div>
       </div>
-      <PlanningGrid bookings={bookings} teacherOptions={teacherOptions} />
+      <div className="planning-desktop-grid">
+        <PlanningGrid bookings={bookings} teacherOptions={teacherOptions} />
+      </div>
+      <PlanningMobileList bookings={bookings} locale={locale} />
     </div>
   )
 }

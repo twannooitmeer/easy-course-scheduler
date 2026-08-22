@@ -501,6 +501,82 @@ dialog.confirm-dialog p {
   overflow: hidden;
 }
 
+/*
+ * Read-only mobile counterpart to the planning grid -- hidden on desktop,
+ * shown (with .planning-desktop-grid hidden instead) below the mobile
+ * breakpoint. See the @media block near the end of this file.
+ */
+.planning-mobile-list {
+  display: none;
+}
+
+.booking-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.booking-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.booking-card-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.booking-card-subtitle {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.booking-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.4rem 0 0.6rem;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.booking-card-group {
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+
+.booking-card-lessons {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.booking-card-lessons li {
+  font-size: 0.82rem;
+}
+
+.lesson-card-date {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.lesson-card-details {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  margin-top: 0.1rem;
+}
+
 .grid-scroll {
   overflow-x: auto;
 }
@@ -1075,5 +1151,13 @@ dialog.teacher-picker-dialog h2 {
 
   .sub-section {
     max-width: 100%;
+  }
+
+  .planning-desktop-grid {
+    display: none;
+  }
+
+  .planning-mobile-list {
+    display: block;
   }
 }

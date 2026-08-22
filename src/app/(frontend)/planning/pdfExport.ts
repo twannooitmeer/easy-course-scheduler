@@ -1,18 +1,8 @@
 import type { Locale } from '../i18n/locale'
 import { t } from '../i18n/t'
-import { STATUS_OPTIONS, type BookingWithLessons } from './types'
 import { toDateInputValue, toTimeInputValue } from './dateHelpers'
-
-function statusLabel(status: BookingWithLessons['status']): string {
-  return STATUS_OPTIONS.find((opt) => opt.value === status)?.label ?? status
-}
-
-function teacherNames(lesson: BookingWithLessons['lessons'][number]): string {
-  if (!lesson.teachers || lesson.teachers.length === 0) return ''
-  return lesson.teachers
-    .map((teacher) => (typeof teacher === 'object' ? teacher.displayName : String(teacher)))
-    .join(', ')
-}
+import { statusLabel, teacherNames } from './format'
+import type { BookingWithLessons } from './types'
 
 function escapeHtml(value: string): string {
   return value
