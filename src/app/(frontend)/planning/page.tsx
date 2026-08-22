@@ -7,8 +7,7 @@ import { DEFAULT_LOCALE, isLocale } from '../i18n/locale'
 import { t } from '../i18n/t'
 import { groupLessonsByBooking } from './groupLessons'
 import { NewBookingDialog } from './NewBookingDialog'
-import { PlanningGrid } from './PlanningGrid'
-import { PlanningMobileList } from './PlanningMobileList'
+import { PlanningApp } from './PlanningApp'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,17 +75,15 @@ export default async function PlanningPage() {
           <h1>{t(locale, 'planning.title')}</h1>
           <p className="subtitle">{t(locale, 'planning.signedInAs', { name: user.name, email: user.email })}</p>
         </div>
-        <div className="page-header-actions">
-          <a href="/planning/export" className="admin-link">
-            {t(locale, 'planning.exportPdf')}
-          </a>
-          <NewBookingDialog schoolOptions={schoolOptions} programOptions={programOptions} />
-        </div>
+        <NewBookingDialog schoolOptions={schoolOptions} programOptions={programOptions} />
       </div>
-      <div className="planning-desktop-grid">
-        <PlanningGrid bookings={bookings} teacherOptions={teacherOptions} />
-      </div>
-      <PlanningMobileList bookings={bookings} locale={locale} />
+      <PlanningApp
+        bookings={bookings}
+        teacherOptions={teacherOptions}
+        schoolOptions={schoolOptions}
+        programOptions={programOptions}
+        locale={locale}
+      />
     </div>
   )
 }

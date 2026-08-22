@@ -231,6 +231,43 @@ a {
   gap: 0.6rem;
 }
 
+.planning-toolbar {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-bar select,
+.filter-bar input {
+  font: inherit;
+  font-size: 0.82rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 0.35rem 0.55rem;
+}
+
+.filter-group-input {
+  width: 6.5rem;
+}
+
+.filter-notice {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  background: var(--accent-soft);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin: 0 0 0.85rem;
+}
+
 .list-toolbar {
   display: flex;
   align-items: center;
@@ -1177,5 +1214,14 @@ dialog.teacher-picker-dialog h2 {
 
   .planning-mobile-list {
     display: block;
+  }
+
+  .filter-bar {
+    width: 100%;
+  }
+
+  .filter-bar select,
+  .filter-bar input {
+    flex: 1 1 45%;
   }
 }

@@ -19,7 +19,12 @@ function escapeHtml(value: string): string {
  * route needs no separate auth-forwarding step: the data is already fetched
  * and authorized by the time this runs.
  */
-export function buildPlanningPdfHtml(bookings: BookingWithLessons[], locale: Locale, generatedAt: Date): string {
+export function buildPlanningPdfHtml(
+  bookings: BookingWithLessons[],
+  locale: Locale,
+  generatedAt: Date,
+  filterSummary?: string,
+): string {
   const rows = bookings
     .map((booking) => {
       const school = typeof booking.school === 'object' ? booking.school.name : String(booking.school)
@@ -94,7 +99,8 @@ export function buildPlanningPdfHtml(bookings: BookingWithLessons[], locale: Loc
     margin-bottom: 14px;
   }
   header h1 { font-size: 18px; margin: 0; }
-  header .generated { color: #5b6270; font-size: 10px; }
+  header .generated { color: #5b6270; font-size: 10px; text-align: right; }
+  header .filters { display: block; margin-top: 2px; font-weight: 400; }
   section.booking { break-inside: avoid; margin-bottom: 16px; }
   section.booking h2 {
     font-size: 13px;
@@ -132,7 +138,10 @@ export function buildPlanningPdfHtml(bookings: BookingWithLessons[], locale: Loc
 <body>
   <header>
     <h1>${escapeHtml(t(locale, 'planning.title'))}</h1>
-    <span class="generated">${escapeHtml(generatedAt.toLocaleString(locale))}</span>
+    <span class="generated">
+      ${escapeHtml(generatedAt.toLocaleString(locale))}
+      ${filterSummary ? `<span class="filters">${escapeHtml(filterSummary)}</span>` : ''}
+    </span>
   </header>
   ${rows}
 </body>

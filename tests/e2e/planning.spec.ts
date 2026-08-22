@@ -290,3 +290,26 @@ test('shows a read-only card list on mobile instead of the editable grid', async
   await expect(bookingCard.locator('.booking-card-lessons')).toBeVisible()
   await expect(bookingCard.locator('.booking-card-lessons li')).toHaveCount(2)
 })
+
+test('filters bookings by class/group and scopes the PDF export to the matching rows', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/planning')
+
+  await page.getByLabel('Class/group').fill(GROUP_LABEL)
+
+  const rows = page.locator('tr.booking-row')
+  await expect(rows).toHaveCount(1)
+  await expect(rows.first()).toContainText(GROUP_LABEL)
+
+  const exportLink = page.getByRole('link', { name: 'Export PDF' })
+  await expect(exportLink).toHaveAttribute('href', new RegExp(`group=${GROUP_LABEL}`))
+
+  const exportHref = await exportLink.getAttribute('href')
+  const filtered = await page.request.get(exportHref!)
+  expect(filtered.status()).toBe(200)
+  const unfiltered = await page.request.get('/planning/export')
+
+  const filteredBody = await filtered.body()
+  const unfilteredBody = await unfiltered.body()
+  expect(filteredBody.byteLength).toBeLessThan(unfilteredBody.byteLength)
+})
