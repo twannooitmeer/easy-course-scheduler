@@ -56,6 +56,18 @@ COPY --from=builder /app/public ./public
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
+# Media.ts's `staticDir: 'media'` writes uploads to a plain relative path
+# (Payload's own uploadFiles.js calls fs.writeFile with no mkdir first),
+# resolved against the container's cwd (/app). Without this directory
+# existing and being writable by the non-root `nextjs` user the process
+# runs as, every upload fails with ENOENT, masked by Payload's production
+# error handling as a generic "Something went wrong." Mount a volume here
+# in docker-compose (see media_uploads) so uploads also survive a rebuild
+# -- this mkdir only guarantees the directory exists and is writable on a
+# fresh container/volume, not that uploads persist across one.
+RUN mkdir media
+RUN chown nextjs:nodejs media
+
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

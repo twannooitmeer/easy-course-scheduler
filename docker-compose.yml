@@ -47,6 +47,14 @@ services:
       SITE_URL: ${SITE_URL:-}
     ports:
       - "3001:3000"
+    volumes:
+      # Media.ts's `staticDir: 'media'` writes uploads to /app/media (see
+      # the Dockerfile's runner stage comment) -- without this, every
+      # upload would still work between requests but vanish on the next
+      # `docker compose up -d --build`, since that recreates the
+      # container's writable layer from scratch.
+      - media_uploads:/app/media
 
 volumes:
   pgdata:
+  media_uploads:
