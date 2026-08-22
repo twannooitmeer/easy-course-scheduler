@@ -1,29 +1,84 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useRef, useState } from 'react'
 
 import type { School } from '@/payload-types'
+import { BulkActionsBar } from '../BulkActionsBar'
+import { ConfirmDialog, type ConfirmDialogHandle } from '../ConfirmDialog'
 import { useLocale } from '../i18n/LocaleProvider'
+import { PAGE_SIZE } from '../paginationConfig'
+import { Pagination } from '../Pagination'
 import { SearchInput } from '../SearchInput'
+import { useResetState } from '../useResetState'
+import { deleteSchools } from './actions'
 import { NewSchoolDialog } from './NewSchoolDialog'
 
 export function SchoolsList({
   schools,
+  query,
+  page,
+  totalPages,
+  totalDocs,
 }: {
   schools: (School & { contactCount: number })[]
+  query: string
+  page: number
+  totalPages: number
+  totalDocs: number
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const { t } = useLocale()
-  const [query, setQuery] = useState('')
+  const [searchValue, setSearchValue] = useResetState(query, () => query)
+  const [selected, setSelected] = useResetState<Set<number>>(schools, () => new Set())
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, setIsPending] = useState(false)
+  const confirmRef = useRef<ConfirmDialogHandle>(null)
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return schools
-    return schools.filter((school) =>
-      [school.name, school.city, school.phone].some((field) => field?.toLowerCase().includes(q)),
-    )
-  }, [schools, query])
+  function navigate(nextPage: number, nextQuery: string) {
+    const params = new URLSearchParams()
+    if (nextQuery) params.set('q', nextQuery)
+    if (nextPage > 1) params.set('page', String(nextPage))
+    const qs = params.toString()
+    router.push(qs ? `${pathname}?${qs}` : pathname)
+  }
+
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  function handleSearchInput(value: string) {
+    setSearchValue(value)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    searchTimeout.current = setTimeout(() => navigate(1, value), 400)
+  }
+
+  function toggleOne(id: number) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleAll() {
+    setSelected((prev) => (prev.size === schools.length ? new Set() : new Set(schools.map((s) => s.id))))
+  }
+
+  async function handleBulkRemove() {
+    const ok = await confirmRef.current?.confirm(t('schools.confirmBulkRemove', { count: selected.size }))
+    if (!ok) return
+
+    setError(null)
+    setIsPending(true)
+    const result = await deleteSchools([...selected])
+    setIsPending(false)
+    if (result.success) {
+      setSelected(new Set())
+      router.refresh()
+    } else {
+      setError(result.error)
+    }
+  }
 
   return (
     <div className="page">
@@ -35,7 +90,9 @@ export function SchoolsList({
         <NewSchoolDialog />
       </div>
 
-      {schools.length === 0 ? (
+      {error && <p className="error-banner">{error}</p>}
+
+      {schools.length === 0 && !query ? (
         <div className="empty-state">
           <p>{t('schools.emptyTitle')}</p>
           <p>{t('schools.emptyHint')}</p>
@@ -43,10 +100,11 @@ export function SchoolsList({
       ) : (
         <>
           <div className="list-toolbar">
-            <SearchInput value={query} onChange={setQuery} placeholder={t('schools.searchPlaceholder')} />
+            <SearchInput value={searchValue} onChange={handleSearchInput} placeholder={t('schools.searchPlaceholder')} />
+            <BulkActionsBar count={selected.size} onRemove={handleBulkRemove} isPending={isPending} />
           </div>
 
-          {filtered.length === 0 ? (
+          {schools.length === 0 ? (
             <div className="empty-state">
               <p>{t('schools.noSearchResults', { query })}</p>
             </div>
@@ -56,6 +114,14 @@ export function SchoolsList({
                 <table className="record-table">
                   <thead>
                     <tr>
+                      <th className="checkbox-column">
+                        <input
+                          type="checkbox"
+                          checked={selected.size === schools.length && schools.length > 0}
+                          onChange={toggleAll}
+                          aria-label={t('common.selectAll')}
+                        />
+                      </th>
                       <th>{t('schools.columnName')}</th>
                       <th>{t('schools.columnCity')}</th>
                       <th>{t('schools.columnPhone')}</th>
@@ -63,8 +129,16 @@ export function SchoolsList({
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map((school) => (
+                    {schools.map((school) => (
                       <tr key={school.id} onClick={() => router.push(`/schools/${school.id}`)}>
+                        <td className="checkbox-column" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selected.has(school.id)}
+                            onChange={() => toggleOne(school.id)}
+                            aria-label={school.name}
+                          />
+                        </td>
                         <td>{school.name}</td>
                         <td>{school.city || t('common.none')}</td>
                         <td>{school.phone || t('common.none')}</td>
@@ -76,8 +150,18 @@ export function SchoolsList({
               </div>
             </div>
           )}
+
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalDocs={totalDocs}
+            pageSize={PAGE_SIZE}
+            onPageChange={(nextPage) => navigate(nextPage, query)}
+          />
         </>
       )}
+
+      <ConfirmDialog ref={confirmRef} />
     </div>
   )
 }

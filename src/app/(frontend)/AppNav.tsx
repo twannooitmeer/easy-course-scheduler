@@ -43,11 +43,9 @@ function setCollapsedStore(next: boolean) {
 export function AppNav({
   orgName,
   logoUrl,
-  isAdmin,
 }: {
   orgName?: string
   logoUrl?: string
-  isAdmin?: boolean
 }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -72,32 +70,41 @@ export function AppNav({
   return (
     <nav className={`app-nav ${collapsed ? 'collapsed' : ''}`}>
       <div className="app-nav-header">
-        <button
-          type="button"
-          className="app-nav-toggle"
-          onClick={toggle}
-          aria-label={collapsed ? t('nav.expandMenu') : t('nav.collapseMenu')}
-          title={collapsed ? t('nav.expandMenu') : t('nav.collapseMenu')}
-        >
-          ☰
-        </button>
-        {!collapsed && (
-          <div className="app-nav-title">
-            {logoUrl && (
-              // eslint-disable-next-line @next/next/no-img-element -- external/uploaded logo, not a static asset next/image can optimize reliably across deployments
-              <img src={logoUrl} alt="" className="app-nav-logo" />
-            )}
-            {orgName || t('nav.defaultOrgName')}
-          </div>
+        {logoUrl && !collapsed && (
+          // eslint-disable-next-line @next/next/no-img-element -- external/uploaded logo, not a static asset next/image can optimize reliably across deployments
+          <img src={logoUrl} alt="" className="app-nav-logo" />
         )}
+        <div className="app-nav-header-row">
+          <button
+            type="button"
+            className="app-nav-toggle"
+            onClick={toggle}
+            aria-label={collapsed ? t('nav.expandMenu') : t('nav.collapseMenu')}
+            title={collapsed ? t('nav.expandMenu') : t('nav.collapseMenu')}
+          >
+            ☰
+          </button>
+          {!collapsed && <div className="app-nav-title">{orgName || t('nav.defaultOrgName')}</div>}
+        </div>
       </div>
+      {/*
+        prefetch={false} on every Link below: this sidebar never unmounts,
+        so its Links are always in the viewport, and Next.js's default
+        prefetch-on-viewport behavior re-fires for all of them whenever a
+        Server Action's revalidatePath call invalidates the router cache —
+        visible in devtools as a burst of small RSC fetches (one per nav
+        item) after every edit anywhere in the app. Harmless functionally
+        (tiny payloads, non-blocking) but pure noise for a handful of
+        always-visible internal-tool links; real navigation between them
+        stays fast without it.
+      */}
       <ul>
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
           const label = t(item.labelKey)
           return (
             <li key={item.href}>
-              <Link href={item.href} className={active ? 'active' : ''} title={label}>
+              <Link href={item.href} className={active ? 'active' : ''} title={label} prefetch={false}>
                 {collapsed ? item.short : label}
               </Link>
             </li>
@@ -106,14 +113,13 @@ export function AppNav({
       </ul>
 
       <div className="app-nav-footer">
-        {isAdmin && !collapsed && (
-          // eslint-disable-next-line @next/next/no-html-link-for-pages -- /admin is Payload's own mounted app, not a Next.js page; a real navigation is correct here
-          <a href="/admin/globals/site-settings" className="app-nav-admin-link" title={t('settings.organisationSettingsLink')}>
-            {t('settings.organisationSettingsLink')}
-          </a>
-        )}
         <div className="app-nav-footer-row">
-          <Link href="/settings" className={`app-nav-icon-link ${settingsActive ? 'active' : ''}`} title={t('nav.settings')}>
+          <Link
+            href="/settings"
+            className={`app-nav-icon-link ${settingsActive ? 'active' : ''}`}
+            title={t('nav.settings')}
+            prefetch={false}
+          >
             ⚙{!collapsed && <span>{t('nav.settings')}</span>}
           </Link>
           <button type="button" className="app-nav-icon-link" onClick={handleLogout} disabled={isLoggingOut} title={t('nav.logout')}>

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import type { Program } from '@/payload-types'
+import { deleteBookingsCascade } from '../deleteCascade'
 import { isUniqueFieldViolation } from '../errorHelpers'
 import { DEFAULT_LOCALE, isLocale } from '../i18n/locale'
 import { t } from '../i18n/t'
@@ -60,14 +61,32 @@ export async function updateProgram(id: number, data: ProgramInput): Promise<Act
 }
 
 export async function deleteProgram(id: number): Promise<ActionResult> {
+  return deletePrograms([id])
+}
+
+/**
+ * Deletes every listed Program, cascading their Bookings (and those
+ * Bookings' Lessons) and Lesson Templates first — see deleteCascade.ts
+ * for why that's necessary rather than a single `payload.delete`. Used
+ * by both the single "Remove" action and the Programs list's
+ * bulk-delete.
+ */
+export async function deletePrograms(ids: number[]): Promise<ActionResult> {
   const { payload, user } = await requireUser()
 
   try {
-    await payload.delete({ collection: 'programs', id, user, overrideAccess: false })
+    await deleteBookingsCascade(payload, user, { program: { in: ids } })
+    await payload.delete({
+      collection: 'lesson-templates',
+      where: { program: { in: ids } },
+      user,
+      overrideAccess: false,
+    })
+    await payload.delete({ collection: 'programs', where: { id: { in: ids } }, user, overrideAccess: false })
     revalidatePath('/programs')
     return { success: true }
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Could not remove program'
+    const message = err instanceof Error ? err.message : 'Could not remove programs'
     return { success: false, error: message }
   }
 }

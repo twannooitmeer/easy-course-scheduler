@@ -35,14 +35,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = isLocale(user?.preferredLanguage) ? user.preferredLanguage : DEFAULT_LOCALE
   const orgName = siteSettings?.organisationName || undefined
   const logoUrl = siteSettings?.logo && typeof siteSettings.logo === 'object' ? siteSettings.logo.url ?? undefined : undefined
-  const isAdmin = user?.role === 'admin'
 
   return (
     <html lang={locale}>
       <body>
         <LocaleProvider locale={locale}>
           <div className="app-shell">
-            <AppNav orgName={orgName} logoUrl={logoUrl} isAdmin={isAdmin} />
+            <AppNav orgName={orgName} logoUrl={logoUrl} />
             <div className="app-content">{children}</div>
           </div>
         </LocaleProvider>

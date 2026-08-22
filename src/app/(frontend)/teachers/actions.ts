@@ -54,14 +54,25 @@ export async function updateTeacher(id: number, data: Partial<TeacherInput>): Pr
 }
 
 export async function deleteTeacher(id: number): Promise<ActionResult> {
+  return deleteTeachers([id])
+}
+
+/**
+ * Deletes every listed Teacher. No cascade needed here (unlike Schools/
+ * Programs) — LessonTemplates.defaultTeacher and Lessons.teachers are
+ * both nullable, real DB columns with a working ON DELETE SET
+ * NULL/CASCADE, so removing a teacher just clears them from any
+ * lesson's teacher list rather than blocking on a constraint.
+ */
+export async function deleteTeachers(ids: number[]): Promise<ActionResult> {
   const { payload, user } = await requireUser()
 
   try {
-    await payload.delete({ collection: 'teachers', id, user, overrideAccess: false })
+    await payload.delete({ collection: 'teachers', where: { id: { in: ids } }, user, overrideAccess: false })
     revalidatePath('/teachers')
     return { success: true }
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Could not remove teacher'
+    const message = err instanceof Error ? err.message : 'Could not remove teachers'
     return { success: false, error: message }
   }
 }

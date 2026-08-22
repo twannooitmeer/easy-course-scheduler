@@ -16,6 +16,8 @@ const DUPLICATE_SCHOOL_NAME = `${SCHOOL_NAME} Duplicate`
 const DUPLICATE_TEACHER_NAME = `${TEACHER_NAME} Duplicate`
 const DUPLICATE_PROGRAM_NAME = `${PROGRAM_NAME} Duplicate`
 const SEARCH_SCHOOL_NAME = `${SCHOOL_NAME} Zebra`
+const PAGINATION_SCHOOL_PREFIX = `${SCHOOL_NAME} Pagination`
+const BULK_SCHOOL_PREFIX = `${SCHOOL_NAME} Bulk`
 
 let payload: Payload
 
@@ -102,6 +104,27 @@ test.beforeAll(async () => {
   await payload.create({ collection: 'teachers', data: { displayName: DUPLICATE_TEACHER_NAME, kind: 'person' } })
   await payload.create({ collection: 'programs', data: { name: DUPLICATE_PROGRAM_NAME } })
   await payload.create({ collection: 'schools', data: { name: SEARCH_SCHOOL_NAME, city: 'Zebratown' } })
+
+  // 21 schools sharing one name prefix -- searching for that prefix
+  // scopes the Schools list to exactly this fixture set, so the
+  // pagination test's "page 1 of 2" math doesn't depend on how many
+  // other schools this shared dev DB happens to have.
+  for (let i = 1; i <= 21; i++) {
+    await payload.create({
+      collection: 'schools',
+      data: { name: `${PAGINATION_SCHOOL_PREFIX} ${String(i).padStart(2, '0')}` },
+    })
+  }
+
+  // 3 schools sharing a different prefix, for the bulk-delete test --
+  // kept separate from the pagination fixture so "select all" only
+  // ever needs to reason about one page of results.
+  for (let i = 1; i <= 3; i++) {
+    await payload.create({
+      collection: 'schools',
+      data: { name: `${BULK_SCHOOL_PREFIX} ${i}` },
+    })
+  }
 })
 
 test.afterAll(async () => {
@@ -291,10 +314,12 @@ test('the search box narrows the Schools list to matching rows', async ({ page }
   await signIn(page)
   await page.goto('/schools')
 
+  // Not asserted visible up front: with pagination now in place (20 per
+  // page) and enough fixture schools in this shared dev DB to span
+  // multiple pages, neither row is guaranteed to land on page 1 before
+  // narrowing the list is what actually puts them there.
   const matchingRow = page.locator('table.record-table tbody tr', { hasText: SEARCH_SCHOOL_NAME })
   const otherRow = page.locator('table.record-table tbody tr', { hasText: BOOKINGS_SCHOOL_NAME })
-  await expect(matchingRow).toBeVisible()
-  await expect(otherRow).toBeVisible()
 
   await page.getByPlaceholder('Search schools…').fill('Zebratown')
   await expect(matchingRow).toBeVisible()
@@ -303,6 +328,55 @@ test('the search box narrows the Schools list to matching rows', async ({ page }
   await page.getByPlaceholder('Search schools…').fill('no school has this in its name at all')
   await expect(page.getByText(/No schools match/)).toBeVisible()
 
+  // Clearing and re-searching for the other row (rather than asserting
+  // it's on the unfiltered list's first page, which pagination makes
+  // unpredictable) confirms the box still narrows correctly afterward.
   await page.getByPlaceholder('Search schools…').fill('')
+  await page.getByPlaceholder('Search schools…').fill(BOOKINGS_SCHOOL_NAME)
   await expect(otherRow).toBeVisible()
+})
+
+test('paginates the Schools list, 20 per page', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/schools')
+
+  // Scoped to just the 21-school pagination fixture via search, so the
+  // page-count assertions don't depend on how many other schools this
+  // shared dev DB happens to have.
+  await page.getByPlaceholder('Search schools…').fill(PAGINATION_SCHOOL_PREFIX)
+  await expect(page.getByText('Showing 1–20 of 21')).toBeVisible()
+  await expect(page.getByText('Page 1 of 2')).toBeVisible()
+  await expect(page.locator('table.record-table tbody tr')).toHaveCount(20)
+
+  // exact: true -- a substring match on "Next" also catches Next.js's own
+  // dev-mode floating "Open Next.js Dev Tools" button.
+  const nextButton = page.getByRole('button', { name: 'Next', exact: true })
+  const previousButton = page.getByRole('button', { name: 'Previous', exact: true })
+  await expect(previousButton).toBeDisabled()
+
+  await nextButton.click()
+  await expect(page.getByText('Showing 21–21 of 21')).toBeVisible()
+  await expect(page.getByText('Page 2 of 2')).toBeVisible()
+  await expect(page.locator('table.record-table tbody tr')).toHaveCount(1)
+  await expect(nextButton).toBeDisabled()
+
+  await previousButton.click()
+  await expect(page.getByText('Page 1 of 2')).toBeVisible()
+})
+
+test('bulk-selects and removes multiple schools at once, with a single confirm dialog', async ({ page }) => {
+  await signIn(page)
+  await page.goto('/schools')
+
+  await page.getByPlaceholder('Search schools…').fill(BULK_SCHOOL_PREFIX)
+  await expect(page.locator('table.record-table tbody tr')).toHaveCount(3)
+
+  await page.getByRole('checkbox', { name: 'Select all' }).click()
+  await expect(page.getByText('3 selected')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Remove selected' }).click()
+  await expect(page.getByText('Remove 3 schools? This cannot be undone.')).toBeVisible()
+  await page.locator('dialog.confirm-dialog').getByRole('button', { name: 'Remove' }).click()
+
+  await expect(page.getByText(`No schools match "${BULK_SCHOOL_PREFIX}"`)).toBeVisible()
 })
