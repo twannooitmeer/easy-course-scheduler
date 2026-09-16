@@ -1,22 +1,9 @@
 import type { CollectionAfterChangeHook } from 'payload'
 
+import { relationshipId } from '../utils/relationshipId'
+
 const DAY_MS = 24 * 60 * 60 * 1000
 const DEFAULT_WEEKLY_CADENCE_DAYS = 7
-
-/**
- * A relationship field's value on `doc` is the raw ID only when the
- * triggering request used `depth: 0`. The local API defaults to depth 2, so
- * `doc.program` is just as likely to arrive already populated as
- * `{ id, name, ... }` — passing that whole object into a `where.equals`
- * clause is what produced a real "invalid input syntax for type integer:
- * NaN" Postgres error the first time this hook was tested against a real DB.
- */
-function relationshipId(value: unknown): number {
-  if (value && typeof value === 'object' && 'id' in value) {
-    return Number((value as { id: number | string }).id)
-  }
-  return Number(value)
-}
 
 /**
  * Booking a School onto a Program should auto-populate the schedule, then

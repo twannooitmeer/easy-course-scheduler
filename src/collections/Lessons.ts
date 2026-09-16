@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAuthenticated } from '../access/roles'
+import { notifyOnLessonStatusChange } from '../notifications/statusChangeHooks'
 
 /**
  * A single planned lesson, generated from a Booking's Program template and
@@ -28,6 +29,9 @@ export const Lessons: CollectionConfig = {
     read: isAuthenticated,
     update: isAuthenticated,
     delete: isAuthenticated,
+  },
+  hooks: {
+    afterChange: [notifyOnLessonStatusChange],
   },
   fields: [
     {

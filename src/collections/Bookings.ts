@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { isAuthenticated } from '../access/roles'
 import { generateLessonsFromBooking } from '../hooks/generateLessonsFromBooking'
+import { notifyOnBookingStatusChange } from '../notifications/statusChangeHooks'
 
 /**
  * A School booked onto a Program. Creating a Booking is the trigger that
@@ -31,7 +32,7 @@ export const Bookings: CollectionConfig = {
     delete: isAuthenticated,
   },
   hooks: {
-    afterChange: [generateLessonsFromBooking],
+    afterChange: [generateLessonsFromBooking, notifyOnBookingStatusChange],
   },
   fields: [
     {
