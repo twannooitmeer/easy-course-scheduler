@@ -59,6 +59,30 @@ group label, and a start date; it creates the Booking through the same
 Server Action path as everything else on this page, which triggers lesson
 generation exactly the way creating one via `/admin` always did.
 
+## Roles
+
+`users.role` is `"admin"` or `"staff"` (defaults to `"staff"`). It controls
+exactly one thing at this stage: organisation-wide, deployment-level
+configuration -- currently just the `site-settings` global (organisation
+name/logo, edited at `/admin/globals/site-settings`). Every other collection
+(Schools, Teachers, Programs, Bookings, Lessons, Contacts, Lesson Templates)
+stays gated on plain authentication regardless of `role` -- day-to-day work
+is identical for every signed-in user, and `"admin"` only adds the
+organisation-wide surfaces on top of that, it never narrows anything a
+`"staff"` user can already do.
+
+The single source of truth is `src/access/roles.ts`: `hasAdminRole(user)` is
+the plain predicate (for Server Components reading the session user
+directly) and `isAdmin` is the same check wrapped as a Payload `Access`
+function (for collection/global `access` blocks). Gate a new admin-only
+surface through one of those two rather than re-checking
+`user.role === 'admin'` inline, so the definition stays in one place as more
+surfaces adopt it.
+
+`role` is unrelated to the teacher/school portal in the roadmap below -- a
+portal account will be its own auth collection with its own access rules,
+not a third value of this enum.
+
 ## Language
 
 Field and collection labels are set as `{ en, nl }` pairs throughout

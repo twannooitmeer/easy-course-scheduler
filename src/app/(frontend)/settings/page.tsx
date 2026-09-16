@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import config from '@/payload.config'
+import { hasAdminRole } from '@/access/roles'
 import { isLocale, DEFAULT_LOCALE } from '../i18n/locale'
 import { SettingsForm } from './SettingsForm'
 
@@ -17,7 +18,8 @@ export default async function SettingsPage() {
     redirect('/admin/login?redirect=%2Fsettings')
   }
 
-  const isAdmin = user.role === 'admin'
+  // Single source of truth for what "admin" means -- see access/roles.ts.
+  const isAdmin = hasAdminRole(user)
   const currentLanguage = isLocale(user.preferredLanguage) ? user.preferredLanguage : DEFAULT_LOCALE
 
   let orgName: string | undefined

@@ -3,9 +3,23 @@ import type { CollectionConfig } from 'payload'
 /**
  * Internal staff accounts. Small teams are the expected case, so anyone
  * can manage anyone else's account — at that scale a lockout is a bigger
- * risk than an internal permission boundary. A `role` field is kept for a
- * later teacher/school portal phase, which will need a real access-control
- * split.
+ * risk than an internal permission boundary.
+ *
+ * `role` ("admin" | "staff") controls exactly one thing at this stage:
+ * organisation-wide, deployment-level configuration (currently just the
+ * `site-settings` global — name/logo). Every collection in this app
+ * (Schools, Teachers, Programs, Bookings, Lessons, ...) stays gated on
+ * `isAuthenticated` regardless of `role` — day-to-day work is the same for
+ * every signed-in user. "admin" only adds the organisation-wide surfaces;
+ * it does not narrow anything a "staff" user can already do. See the full
+ * definition and the access-function contract in `src/access/roles.ts`
+ * (`hasAdminRole`/`isAdmin`) and the README's "Roles" section — read it
+ * before gating a new surface on this field, rather than re-checking
+ * `user.role === 'admin'` inline.
+ *
+ * `role` is unrelated to the future teacher/school portal phase: a portal
+ * account will be its own auth collection with its own access rules, not a
+ * third value of this enum.
  */
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -37,6 +51,10 @@ export const Users: CollectionConfig = {
       required: true,
       defaultValue: 'staff',
       label: { en: 'Role', nl: 'Rol' },
+      admin: {
+        description:
+          '"Admin" adds organisation-wide settings (currently: branding under Globals > Site settings) on top of everything a "Staff" user can already do. It does not restrict day-to-day work -- every signed-in user has full access to Schools, Teachers, Programs, Bookings, and Lessons regardless of role. See src/access/roles.ts for the full definition.',
+      },
       options: [
         { label: { en: 'Admin', nl: 'Beheerder' }, value: 'admin' },
         { label: { en: 'Staff', nl: 'Medewerker' }, value: 'staff' },
