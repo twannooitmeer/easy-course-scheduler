@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAuthenticated } from '../access/roles'
+import { notifyOnLessonStatusChange } from '../notifications/statusChangeHooks'
 
 /**
  * A single planned lesson, generated from a Booking's Program template and
@@ -28,6 +29,9 @@ export const Lessons: CollectionConfig = {
     read: isAuthenticated,
     update: isAuthenticated,
     delete: isAuthenticated,
+  },
+  hooks: {
+    afterChange: [notifyOnLessonStatusChange],
   },
   fields: [
     {
@@ -132,6 +136,19 @@ export const Lessons: CollectionConfig = {
       name: 'remark',
       type: 'textarea',
       label: { en: 'Remark', nl: 'Opmerking' },
+    },
+    {
+      name: 'importRef',
+      type: 'text',
+      unique: true,
+      index: true,
+      label: { en: 'Import reference', nl: 'Importreferentie' },
+      admin: {
+        position: 'sidebar',
+        description:
+          'Set only by the legacy-spreadsheet import script (scripts/legacy-import/) to identify which source row this lesson came from, so a later re-run of the same import updates it instead of creating a duplicate. Empty for every lesson generated or created through the app itself.',
+        readOnly: true,
+      },
     },
   ],
 }

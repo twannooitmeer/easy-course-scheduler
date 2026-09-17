@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { isAuthenticated } from '../access/roles'
 import { generateLessonsFromBooking } from '../hooks/generateLessonsFromBooking'
+import { notifyOnBookingStatusChange } from '../notifications/statusChangeHooks'
 
 /**
  * A School booked onto a Program. Creating a Booking is the trigger that
@@ -31,7 +32,7 @@ export const Bookings: CollectionConfig = {
     delete: isAuthenticated,
   },
   hooks: {
-    afterChange: [generateLessonsFromBooking],
+    afterChange: [generateLessonsFromBooking, notifyOnBookingStatusChange],
   },
   fields: [
     {
@@ -88,6 +89,19 @@ export const Bookings: CollectionConfig = {
       name: 'note',
       type: 'textarea',
       label: { en: 'Note', nl: 'Notitie' },
+    },
+    {
+      name: 'importRef',
+      type: 'text',
+      unique: true,
+      index: true,
+      label: { en: 'Import reference', nl: 'Importreferentie' },
+      admin: {
+        position: 'sidebar',
+        description:
+          'Set only by the legacy-spreadsheet import script (scripts/legacy-import/) to identify which source row this booking came from, so a later re-run of the same import updates it instead of creating a duplicate. Empty for every booking created through the app itself.',
+        readOnly: true,
+      },
     },
   ],
 }

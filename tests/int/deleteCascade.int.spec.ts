@@ -22,7 +22,22 @@ describe('deleteBookingsCascade', () => {
 
   beforeAll(async () => {
     payload = await getPayload({ config })
-    for (const collection of ['lessons', 'bookings', 'lesson-templates', 'programs', 'schools'] as const) {
+    // Full, dependency-ordered cleanup (children before the parents they
+    // reference). Spec files run in a fixed order against the same dev
+    // database (`fileParallelism: false` in vitest.config.mts), so a leftover
+    // Closure/Teacher row from another spec must not block Schools/Programs
+    // here either. See legacyImport.int.spec.ts's
+    // SHARED_COLLECTIONS_CLEANUP_ORDER doc comment for the full explanation.
+    for (const collection of [
+      'closures',
+      'lessons',
+      'bookings',
+      'lesson-templates',
+      'programs',
+      'teachers',
+      'contacts',
+      'schools',
+    ] as const) {
       await payload.delete({ collection, where: { id: { exists: true } } })
     }
     const users = await payload.find({ collection: 'users', limit: 1 })

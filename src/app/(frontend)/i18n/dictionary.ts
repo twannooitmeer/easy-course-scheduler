@@ -293,6 +293,14 @@ const en = {
     organisationSettingsLink: 'Organisation settings (admin panel)',
     adminOnlyHint: 'Only visible to admins.',
   },
+  notifications: {
+    bookingStatusChangedSubject: '{school} — {program}: status changed to {status}',
+    bookingStatusChangedBody:
+      'The status of the booking for {school} ({program}{group}) changed to "{status}".',
+    lessonStatusChangedSubject: '{school} — {program}, lesson {seq}: status changed to {status}',
+    lessonStatusChangedBody:
+      'The status of lesson {seq} ({date}) for {school} ({program}) changed to "{status}".',
+  },
 }
 
 export type Dictionary = typeof en
@@ -575,6 +583,14 @@ const nl: Dictionary = {
     organisationSectionHint: 'Stel de organisatienaam en het logo in die in het linkermenu worden getoond.',
     organisationSettingsLink: 'Organisatie-instellingen (admin-paneel)',
     adminOnlyHint: 'Alleen zichtbaar voor beheerders.',
+  },
+  notifications: {
+    bookingStatusChangedSubject: '{school} — {program}: status gewijzigd naar {status}',
+    bookingStatusChangedBody:
+      'De status van de inschrijving voor {school} ({program}{group}) is gewijzigd naar "{status}".',
+    lessonStatusChangedSubject: '{school} — {program}, les {seq}: status gewijzigd naar {status}',
+    lessonStatusChangedBody:
+      'De status van les {seq} ({date}) voor {school} ({program}) is gewijzigd naar "{status}".',
   },
 }
 

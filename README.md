@@ -59,6 +59,52 @@ group label, and a start date; it creates the Booking through the same
 Server Action path as everything else on this page, which triggers lesson
 generation exactly the way creating one via `/admin` always did.
 
+## Notifications
+
+`src/notifications/` sends an email whenever a Booking's or a Lesson's
+`status` field changes on an existing record (never on create — a freshly
+generated Lesson has no previous status to have changed from). Bookings
+notify every Contact at the school; Lessons notify every assigned Teacher
+with an email address. Both go through the same `NotificationSender`
+interface (`src/notifications/types.ts`):
+
+- `LocalNotificationSender` — logs the email instead of sending it. The
+  default whenever `RESEND_API_KEY` or `EMAIL_FROM` isn't set, which is the
+  case for local dev and the whole test suite out of the box.
+- `ResendNotificationSender` — a plain `fetch` call to the Resend API.
+  Selected automatically once both env vars are set (see `.env.example`).
+
+`getNotificationSender()` picks between the two on every call, so nothing
+in the codebase (or a deployment) needs to choose a transport explicitly.
+Email copy is built in `src/notifications/templates.ts` through the same
+`t()`/dictionary system as the rest of the front-end (`src/app/(frontend)/i18n/`,
+`notifications.*` keys) — adding a language means adding those keys to a new
+dictionary entry, same as any other UI text.
+
+## Roles
+
+`users.role` is `"admin"` or `"staff"` (defaults to `"staff"`). It controls
+exactly one thing at this stage: organisation-wide, deployment-level
+configuration -- currently just the `site-settings` global (organisation
+name/logo, edited at `/admin/globals/site-settings`). Every other collection
+(Schools, Teachers, Programs, Bookings, Lessons, Contacts, Lesson Templates)
+stays gated on plain authentication regardless of `role` -- day-to-day work
+is identical for every signed-in user, and `"admin"` only adds the
+organisation-wide surfaces on top of that, it never narrows anything a
+`"staff"` user can already do.
+
+The single source of truth is `src/access/roles.ts`: `hasAdminRole(user)` is
+the plain predicate (for Server Components reading the session user
+directly) and `isAdmin` is the same check wrapped as a Payload `Access`
+function (for collection/global `access` blocks). Gate a new admin-only
+surface through one of those two rather than re-checking
+`user.role === 'admin'` inline, so the definition stays in one place as more
+surfaces adopt it.
+
+`role` is unrelated to the teacher/school portal in the roadmap below -- a
+portal account will be its own auth collection with its own access rules,
+not a third value of this enum.
+
 ## Language
 
 Field and collection labels are set as `{ en, nl }` pairs throughout
@@ -136,9 +182,10 @@ assumptions (an external `edge` network your reverse proxy is already on).
 - [x] Bilingual (EN/NL) admin UI and field labels
 - [x] Real migrations (`payload migrate:create` + a `migrator` build stage/service)
 - [x] Custom planning grid (grouped/expandable by program, sorted by start date), with e2e coverage
-- [ ] Combinable filters (school/teacher/class/month/program)
-- [ ] PDF export
-- [ ] Status-change email notifications (Resend)
+- [x] Combinable filters (school/teacher/class/month/program)
+- [x] PDF export
+- [x] Status-change email notifications (Resend, behind a no-op transport for dev/test — see `src/notifications/`)
+- [x] Generic legacy-spreadsheet import (per-deployment config, dry-run by default — see `scripts/legacy-import/`)
 
 Out of scope for now: a teacher/school self-service portal (a separately
 scoped phase — real external accounts and permission boundaries are
