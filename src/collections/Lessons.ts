@@ -137,5 +137,18 @@ export const Lessons: CollectionConfig = {
       type: 'textarea',
       label: { en: 'Remark', nl: 'Opmerking' },
     },
+    {
+      name: 'importRef',
+      type: 'text',
+      unique: true,
+      index: true,
+      label: { en: 'Import reference', nl: 'Importreferentie' },
+      admin: {
+        position: 'sidebar',
+        description:
+          'Set only by the legacy-spreadsheet import script (scripts/legacy-import/) to identify which source row this lesson came from, so a later re-run of the same import updates it instead of creating a duplicate. Empty for every lesson generated or created through the app itself.',
+        readOnly: true,
+      },
+    },
   ],
 }

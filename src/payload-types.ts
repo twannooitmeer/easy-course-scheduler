@@ -144,6 +144,9 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name: string;
+  /**
+   * "Admin" adds organisation-wide settings (currently: branding under Globals > Site settings) on top of everything a "Staff" user can already do. It does not restrict day-to-day work -- every signed-in user has full access to Schools, Teachers, Programs, Bookings, and Lessons regardless of role. See src/access/roles.ts for the full definition.
+   */
   role: 'admin' | 'staff';
   /**
    * Language for the front-end planning app (/planning, /schools, /teachers, /programs, /settings) — separate from the admin panel's own language picker in the account menu, which only affects /admin.
@@ -287,6 +290,10 @@ export interface Booking {
    */
   status: 'nieuw' | 'aangevraagd_docent' | 'akkoord_docent' | 'akkoord_school';
   note?: string | null;
+  /**
+   * Set only by the legacy-spreadsheet import script (scripts/legacy-import/) to identify which source row this booking came from, so a later re-run of the same import updates it instead of creating a duplicate. Empty for every booking created through the app itself.
+   */
+  importRef?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -317,6 +324,10 @@ export interface Lesson {
    */
   soortOverride?: ('regulier' | 'maatwerk' | 'cmk' | 'kbw') | null;
   remark?: string | null;
+  /**
+   * Set only by the legacy-spreadsheet import script (scripts/legacy-import/) to identify which source row this lesson came from, so a later re-run of the same import updates it instead of creating a duplicate. Empty for every lesson generated or created through the app itself.
+   */
+  importRef?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -336,6 +347,10 @@ export interface Closure {
    * Leave blank for a single day.
    */
   endDate?: string | null;
+  /**
+   * Set only by the legacy-spreadsheet import script (scripts/legacy-import/) to identify which source row this closure came from, so a later re-run of the same import updates it instead of creating a duplicate. Empty for every closure created through the app itself.
+   */
+  importRef?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -582,6 +597,7 @@ export interface BookingsSelect<T extends boolean = true> {
   startDate?: T;
   status?: T;
   note?: T;
+  importRef?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -602,6 +618,7 @@ export interface LessonsSelect<T extends boolean = true> {
   status?: T;
   soortOverride?: T;
   remark?: T;
+  importRef?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -614,6 +631,7 @@ export interface ClosuresSelect<T extends boolean = true> {
   label?: T;
   startDate?: T;
   endDate?: T;
+  importRef?: T;
   updatedAt?: T;
   createdAt?: T;
 }

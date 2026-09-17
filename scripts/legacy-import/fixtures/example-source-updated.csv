@@ -1,0 +1,8 @@
+School,Docent,Programma,Datum,Groep,Status,Soort,Starttijd,Eindtijd,Locatie,Aantal leerlingen,Opmerking
+Voorbeeldschool Noord,Jansen,Lentekriebels,2026-09-01,3a,akkoord school,regulier,09:00,09:45,Gymzaal,26,
+Voorbeeldschool Noord,Jansen,Lentekriebels,2026-09-08,3a,aangevraagd,regulier,09:00,09:45,Gymzaal,24,
+Voorbeeldschool Noord ,Bakker en De Vries,Lentekriebels,2026-09-15,3a,akkoord docent,regulier,09:00,09:45,,22,Twee docenten
+Voorbeeldschool Zuid,Voorbeeld Cultuurhuis,Wintermuziek,2026-09-02,6/7,akkoord school,maatwerk,,,Aula,30,
+Voorbeeldschool Noord - studiedag,,,2026-10-05,,,,,,,,Studiedag hele school
+,Jansen,Lentekriebels,2026-09-22,3a,nieuw,,,,,,,
+Voorbeeldschool Zuid,Voorbeeld Cultuurhuis,Wintermuziek,2026-09-09,6/7,onbekende-status,maatwerk,,,Aula,30,
