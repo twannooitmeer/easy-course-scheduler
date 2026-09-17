@@ -24,7 +24,14 @@ describe('status-change notification hooks', () => {
 
   beforeAll(async () => {
     payload = await getPayload({ config })
+    // Full, dependency-ordered cleanup (children before the parents they
+    // reference). Spec files run in a fixed order against the same dev
+    // database (`fileParallelism: false` in vitest.config.mts), so a leftover
+    // Closure row from another spec must not block Schools here either. See
+    // legacyImport.int.spec.ts's SHARED_COLLECTIONS_CLEANUP_ORDER doc comment
+    // for the full explanation.
     for (const collection of [
+      'closures',
       'lessons',
       'bookings',
       'lesson-templates',

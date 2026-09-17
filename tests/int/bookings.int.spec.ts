@@ -24,12 +24,22 @@ describe('Bookings: generateLessonsFromBooking', () => {
 
   beforeAll(async () => {
     payload = await getPayload({ config })
+    // Full, dependency-ordered cleanup (children before the parents they
+    // reference). Spec files now run in a fixed order against the same dev
+    // database (`fileParallelism: false` in vitest.config.mts), so a leftover
+    // row from any other spec's Closures/Contacts/LessonTemplates would
+    // otherwise block deleting the Schools/Programs below it and abort this
+    // whole cleanup with a Postgres foreign-key violation. See
+    // legacyImport.int.spec.ts's SHARED_COLLECTIONS_CLEANUP_ORDER doc comment
+    // for the full explanation.
     for (const collection of [
+      'closures',
       'lessons',
       'bookings',
       'lesson-templates',
       'programs',
       'teachers',
+      'contacts',
       'schools',
     ] as const) {
       await payload.delete({ collection, where: { id: { exists: true } } })
